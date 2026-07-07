@@ -293,6 +293,8 @@ body.dark .about-card h2 {
 .checklist-grid > *,
 .forecast-grid > *,
 .weather-layout > *,
+.wheel-layout > *,
+.wheel-prompt-grid > *,
 .history-layout > *,
 .faq-grid > *,
 .shopping-layout > *,
@@ -664,6 +666,221 @@ textarea {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 16px;
+}
+
+.wheel-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(300px, 1.05fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.wheel-stage {
+  min-height: 520px;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.72), rgba(232, 242, 241, 0.52)),
+    url("assets/norris-lake-hero.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.wheel-stage:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+body.dark .wheel-stage:before {
+  background: rgba(9, 37, 55, 0.74);
+}
+
+.wheel-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+.wheel-disc {
+  width: min(390px, 78vw);
+  aspect-ratio: 1;
+  border: 12px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 24px 54px rgba(9, 37, 55, 0.24), inset 0 0 0 7px rgba(255, 255, 255, 0.28);
+  display: grid;
+  place-items: center;
+  transition: transform 2.3s cubic-bezier(0.12, 0.74, 0.12, 1);
+}
+
+.wheel-disc.spinning {
+  filter: saturate(1.12);
+}
+
+.wheel-center {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  border: 8px solid rgba(255, 255, 255, 0.84);
+  border-radius: 50%;
+  background: var(--lake-950);
+  color: white;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform 2.3s cubic-bezier(0.12, 0.74, 0.12, 1);
+}
+
+.wheel-center svg {
+  width: 24px;
+  height: 24px;
+}
+
+.wheel-center strong {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-top: 38px solid var(--gold);
+  filter: drop-shadow(0 8px 12px rgba(9, 37, 55, 0.24));
+  z-index: 2;
+}
+
+.wheel-spin-button {
+  min-width: 180px;
+}
+
+.wheel-spin-button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.wheel-result-panel {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.wheel-result-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.wheel-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.wheel-filters button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--lake-850);
+  font-weight: 800;
+}
+
+.wheel-filters button.active {
+  background: var(--forest);
+  color: white;
+  border-color: transparent;
+}
+
+body.dark .wheel-filters button {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.wheel-history {
+  display: grid;
+  gap: 8px;
+}
+
+.wheel-history p {
+  margin: 0;
+}
+
+.wheel-history-item,
+.wheel-prompt-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+body.dark .wheel-history-item,
+body.dark .wheel-prompt-card {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wheel-history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.wheel-history-item strong {
+  overflow-wrap: anywhere;
+}
+
+.wheel-history-item span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.wheel-prompt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.wheel-prompt-card {
+  padding: 16px;
+}
+
+.wheel-prompt-card span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.wheel-prompt-card h3 {
+  margin: 10px 0 8px;
+  color: var(--lake-850);
+}
+
+body.dark .wheel-prompt-card h3 {
+  color: white;
+}
+
+.wheel-prompt-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .history-layout {
@@ -1145,6 +1362,8 @@ svg {
   .checklist-grid,
   .forecast-grid,
   .split,
+  .wheel-layout,
+  .wheel-prompt-grid,
   .history-layout,
   .faq-grid,
   .shopping-layout,

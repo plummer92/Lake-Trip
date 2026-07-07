@@ -1,6 +1,6 @@
 const TRIP_ID = 'take-5-cabin-2026';
 const LOCAL_KEY = `planner:${TRIP_ID}`;
-const pageIds = ['dashboard', 'weather', 'norris-faq', 'flat-hollow-faq', 'daily', 'meals', 'shopping', 'packing', 'budget'];
+const pageIds = ['dashboard', 'weather', 'norris-faq', 'flat-hollow-faq', 'daily', 'meals', 'shopping', 'wheel', 'packing', 'budget'];
 
 const categories = [
   'Produce', 'Dairy', 'Meat', 'Frozen', 'Dry Goods', 'Snacks', 'Condiments',
@@ -9,6 +9,30 @@ const categories = [
 ];
 
 const defaultDinnerIdeas = ['Steaks', 'Tacos', 'Pulled pork sandwiches', 'Grilled chicken', 'Pizza night', 'Fajitas', 'Restaurant', 'Kabobs', 'Smoked ribs'];
+
+const wheelOptions = [
+  { category: 'Lake', title: 'Best Splash Contest', detail: 'Everyone gets one jump, cannonball, or float pose. Loudest dock applause wins.', icon: 'waves' },
+  { category: 'Lake', title: 'Sunset Cove Cruise', detail: 'Pick one quiet cove and make it the official sunset lap for the day.', icon: 'ship-wheel' },
+  { category: 'Lake', title: 'Float DJ Takeover', detail: 'Winner gets three lake songs in a row while everyone is floating.', icon: 'music' },
+  { category: 'Game Night', title: 'Cabin Card Table', detail: 'Play cards or dice after dinner. Winner gets first pick from the snack stash.', icon: 'dice-5' },
+  { category: 'Game Night', title: 'Minute-to-Win-It Round', detail: 'Invent a 60-second cabin challenge using cups, napkins, or whatever is on hand.', icon: 'timer' },
+  { category: 'Game Night', title: 'Mystery Prize Night', detail: 'Somebody brings one tiny prize, then the group plays for it after dinner.', icon: 'gift' },
+  { category: 'Bring', title: 'Bring Glow Sticks', detail: 'Pack glow sticks or cheap light-up bracelets for dock photos after dark.', icon: 'sparkles' },
+  { category: 'Bring', title: 'Bring a Mystery Snack', detail: 'Bring one snack nobody else knows about. Everyone gives it a lake rating.', icon: 'shopping-bag' },
+  { category: 'Bring', title: 'Bring a Floating Trophy', detail: 'Bring something silly that can become the weekly champion trophy.', icon: 'trophy' },
+  { category: 'Marina', title: 'Twisted Pickle Pick', detail: 'At the marina, order one thing the table has not tried yet and pass bites around.', icon: 'utensils' },
+  { category: 'Marina', title: 'Marina Photo Hunt', detail: 'Get one good group photo with boats, dock boards, or the marina sign in the background.', icon: 'camera' },
+  { category: 'Food', title: 'Best Dip Challenge', detail: 'Make or buy a dip. The group votes before dinner and the winner gets bragging rights.', icon: 'chef-hat' },
+  { category: 'Food', title: 'Snack Board Draft', detail: 'Each person adds one thing to a shared snack board. No duplicate picks.', icon: 'sandwich' },
+  { category: 'Beer', title: 'Beer or Soda Blind Taste', detail: '21+ can blind taste two beers; everyone else uses soda. Guess before the reveal.', icon: 'beer' },
+  { category: 'Beer', title: 'Lake Toast Round', detail: 'Everyone gives a quick toast to the best moment so far. Beer, soda, or water all count.', icon: 'glass-water' },
+  { category: 'Cocktail', title: 'Cabin Drink Name', detail: 'Make a 21+ cocktail or a mocktail and give it a Take-5 Cabin name.', icon: 'martini' },
+  { category: 'Cocktail', title: 'Mocktail Backup Round', detail: 'Someone has to make the best no-alcohol lake drink. Garnish counts.', icon: 'cup-soda' },
+  { category: 'Dare', title: 'Weather Reporter Bit', detail: 'Record a 20-second dramatic lake weather report from the deck.', icon: 'cloud-sun' },
+  { category: 'Dare', title: 'Boat Name Pitch', detail: 'Everyone pitches a ridiculous boat name. Best one wins the round.', icon: 'anchor' }
+];
+
+const wheelColors = ['#176178', '#f2b84b', '#1e5a42', '#d8644d', '#103d56', '#9a683f'];
 
 const mealGroceries = {
   Eggs: [['Breakfast', 'Eggs', '2 dozen'], ['Dairy', 'Butter', '1 lb']],
@@ -196,6 +220,8 @@ let saveTimer = null;
 let weatherData = null;
 let weatherError = null;
 let selectedMealIdea = '';
+let wheelRotation = 0;
+let wheelCategory = 'All';
 
 function createDefaultState() {
   return {
@@ -223,6 +249,7 @@ function createDefaultState() {
     shoppingBuyer: {},
     shoppingCost: {},
     budget: Object.fromEntries(budgetSeeds.map(([name, planned, actual]) => [name, { planned, actual }])),
+    wheelHistory: [],
     updatedAt: null
   };
 }
@@ -266,7 +293,8 @@ function mergeState(incoming) {
     shoppingQty: { ...(incoming.shoppingQty || {}) },
     shoppingBuyer: { ...(incoming.shoppingBuyer || {}) },
     shoppingCost: { ...(incoming.shoppingCost || {}) },
-    budget: { ...base.budget, ...(incoming.budget || {}) }
+    budget: { ...base.budget, ...(incoming.budget || {}) },
+    wheelHistory: Array.isArray(incoming.wheelHistory) ? incoming.wheelHistory.slice(0, 8) : []
   };
 }
 
@@ -318,6 +346,7 @@ function bindEvents() {
   document.getElementById('mealIdeaName').addEventListener('keydown', event => {
     if (event.key === 'Enter') addMealIdea();
   });
+  document.getElementById('spinWheelButton').addEventListener('click', spinWheel);
   document.getElementById('exportJson').addEventListener('click', exportJson);
   document.getElementById('importJson').addEventListener('change', importJson);
   document.getElementById('searchEverything').addEventListener('input', applySearch);
@@ -360,6 +389,7 @@ function render() {
   renderDays();
   renderMeals();
   renderShopping();
+  renderWheel();
   renderOwned();
   renderChecklists();
   renderBudget();
@@ -836,6 +866,101 @@ function assignDinner(dayId, dinner) {
   renderMeals();
   renderShopping();
   lucide.createIcons();
+}
+
+function renderWheel() {
+  const entries = getWheelEntries();
+  const wheel = document.getElementById('spinWheel');
+  if (!wheel) return;
+  wheel.style.background = wheelGradient(entries);
+  wheel.style.transform = `rotate(${wheelRotation}deg)`;
+  wheel.querySelector('.wheel-center')?.style.setProperty('transform', `rotate(${-wheelRotation}deg)`);
+
+  const latest = state.wheelHistory[0];
+  document.getElementById('wheelResultCategory').textContent = latest?.category || 'Ready';
+  document.getElementById('wheelResultTitle').textContent = latest?.title || 'Let the lake decide.';
+  document.getElementById('wheelResultDetail').textContent = latest?.detail || 'A fresh challenge will land here after the spin.';
+
+  const categories = ['All', ...new Set(wheelOptions.map(option => option.category))];
+  document.getElementById('wheelFilters').innerHTML = categories.map(category => `
+    <button type="button" class="${category === wheelCategory ? 'active' : ''}" data-wheel-category="${escapeHtml(category)}">${escapeHtml(category)}</button>
+  `).join('');
+
+  document.getElementById('wheelPromptGrid').innerHTML = entries.map(option => `
+    <article class="wheel-prompt-card">
+      <span><i data-lucide="${option.icon}"></i>${escapeHtml(option.category)}</span>
+      <h3>${escapeHtml(option.title)}</h3>
+      <p>${escapeHtml(option.detail)}</p>
+    </article>
+  `).join('');
+
+  renderWheelHistory();
+
+  document.querySelectorAll('[data-wheel-category]').forEach(button => {
+    button.addEventListener('click', () => {
+      wheelCategory = button.dataset.wheelCategory;
+      renderWheel();
+      lucide.createIcons();
+    });
+  });
+}
+
+function renderWheelHistory() {
+  const history = state.wheelHistory || [];
+  document.getElementById('wheelHistory').innerHTML = `
+    <span class="label">Recent Spins</span>
+    ${history.length ? history.map(item => `
+      <div class="wheel-history-item">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.category)}</span>
+      </div>
+    `).join('') : '<p>No spins yet.</p>'}
+  `;
+}
+
+function spinWheel() {
+  const entries = getWheelEntries();
+  if (!entries.length) return;
+  const button = document.getElementById('spinWheelButton');
+  const wheel = document.getElementById('spinWheel');
+  const choiceIndex = Math.floor(Math.random() * entries.length);
+  const choice = entries[choiceIndex];
+  const segmentAngle = 360 / entries.length;
+  const currentMod = ((wheelRotation % 360) + 360) % 360;
+  const landingAngle = 360 - (choiceIndex * segmentAngle + segmentAngle / 2);
+  wheelRotation += 1440 + Math.floor(Math.random() * 3) * 360 + landingAngle - currentMod;
+  button.disabled = true;
+  wheel.classList.add('spinning');
+  wheel.style.transform = `rotate(${wheelRotation}deg)`;
+  wheel.querySelector('.wheel-center')?.style.setProperty('transform', `rotate(${-wheelRotation}deg)`);
+
+  setTimeout(() => {
+    state.wheelHistory = [{
+      category: choice.category,
+      title: choice.title,
+      detail: choice.detail,
+      at: new Date().toISOString()
+    }, ...(state.wheelHistory || [])].slice(0, 8);
+    button.disabled = false;
+    wheel.classList.remove('spinning');
+    scheduleSave();
+    renderWheel();
+    lucide.createIcons();
+  }, 2300);
+}
+
+function getWheelEntries() {
+  return wheelCategory === 'All'
+    ? wheelOptions
+    : wheelOptions.filter(option => option.category === wheelCategory);
+}
+
+function wheelGradient(entries) {
+  const segment = 100 / entries.length;
+  return `conic-gradient(${entries.map((_, index) => {
+    const color = wheelColors[index % wheelColors.length];
+    return `${color} ${index * segment}% ${(index + 1) * segment}%`;
+  }).join(', ')})`;
 }
 
 function renderShopping() {

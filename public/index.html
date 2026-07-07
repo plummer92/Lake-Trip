@@ -18,6 +18,7 @@
         <a href="#daily" data-nav="daily">Daily</a>
         <a href="#meals" data-nav="meals">Meals</a>
         <a href="#shopping" data-nav="shopping">Shopping</a>
+        <a href="#wheel" data-nav="wheel">Wheel</a>
         <a href="#packing" data-nav="packing">Packing</a>
         <a href="#budget" data-nav="budget">Budget</a>
       </nav>
@@ -283,6 +284,35 @@
             <div class="pill-list" id="ownedList"></div>
           </aside>
         </div>
+      </section>
+
+      <section class="shell planner-section page" id="wheel" data-page="wheel">
+        <div class="section-heading">
+          <p class="eyebrow">Lake week game</p>
+          <h2>Spin the Wheel</h2>
+        </div>
+        <div class="wheel-layout">
+          <article class="wheel-stage card">
+            <div class="wheel-pointer" aria-hidden="true"></div>
+            <div class="wheel-disc" id="spinWheel" aria-label="Lake trip challenge wheel">
+              <div class="wheel-center">
+                <i data-lucide="sparkles"></i>
+                <strong>Take-5</strong>
+              </div>
+            </div>
+            <button class="button wheel-spin-button" id="spinWheelButton"><i data-lucide="refresh-cw"></i> Spin Wheel</button>
+          </article>
+          <aside class="side-panel wheel-result-panel">
+            <div class="section-heading compact">
+              <p class="eyebrow" id="wheelResultCategory">Ready</p>
+              <h2 id="wheelResultTitle">Let the lake decide.</h2>
+            </div>
+            <p id="wheelResultDetail">A fresh challenge will land here after the spin.</p>
+            <div class="wheel-filters" id="wheelFilters"></div>
+            <div class="wheel-history" id="wheelHistory"></div>
+          </aside>
+        </div>
+        <div class="wheel-prompt-grid" id="wheelPromptGrid"></div>
       </section>
 
       <section class="shell planner-section page" id="packing" data-page="packing">
