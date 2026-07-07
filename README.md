@@ -4,6 +4,12 @@ A responsive family lake-trip command center for Norris Lake, Flat Hollow Marina
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/plummer92/Lake-Trip)
 
+## Live App
+
+Current Google VM URL:
+
+http://136.112.169.245
+
 ## Run Locally
 
 ```powershell
