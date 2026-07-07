@@ -1,0 +1,12 @@
+# Replace planner.example.com with your domain after its DNS points to the VM.
+# Caddy will automatically issue and renew HTTPS certificates for a real domain.
+planner.example.com {
+  encode gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+# If you only want to test by VM external IP first, use this instead:
+# :80 {
+#   encode gzip
+#   reverse_proxy 127.0.0.1:3000
+# }

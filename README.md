@@ -35,6 +35,14 @@ Your laptop should only be used for development. Once deployed, everyone uses th
 
 This app can be deployed anywhere that runs Node, such as Render, Railway, Fly.io, or a VPS. Render is the simplest path for this project because `render.yaml` is already included.
 
+### Google Compute Engine VM
+
+If you already have a Google Cloud micro VM, use the Google VM deployment guide:
+
+[deploy/google-vm/README.md](deploy/google-vm/README.md)
+
+That setup runs the Node app with systemd, uses Caddy for HTTP/HTTPS, and keeps shared planner data in Neon.
+
 ### Render Setup
 
 1. Push this folder to GitHub.
