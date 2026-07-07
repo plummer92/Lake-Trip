@@ -240,7 +240,8 @@ function navigatePage(page) {
 }
 
 function setActivePage(page, scrollToPage = false) {
-  document.querySelectorAll('[data-page]').forEach(section => {
+  document.body.hidden = false;
+  document.querySelectorAll('.page[data-page]').forEach(section => {
     section.hidden = section.dataset.page !== page;
   });
   document.querySelectorAll('[data-nav]').forEach(link => {
