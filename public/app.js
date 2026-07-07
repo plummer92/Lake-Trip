@@ -1,6 +1,6 @@
 const TRIP_ID = 'take-5-cabin-2026';
 const LOCAL_KEY = `planner:${TRIP_ID}`;
-const pageIds = ['dashboard', 'daily', 'meals', 'shopping', 'packing', 'budget'];
+const pageIds = ['dashboard', 'weather', 'daily', 'meals', 'shopping', 'packing', 'budget'];
 
 const categories = [
   'Produce', 'Dairy', 'Meat', 'Frozen', 'Dry Goods', 'Snacks', 'Condiments',
@@ -80,6 +80,8 @@ const days = Array.from({ length: 9 }, (_, index) => {
 let state = createDefaultState();
 let syncMode = 'localStorage';
 let saveTimer = null;
+let weatherData = null;
+let weatherError = null;
 
 function createDefaultState() {
   return {
@@ -117,6 +119,7 @@ async function init() {
   bindEvents();
   await loadState();
   render();
+  refreshWeather();
 }
 
 async function loadState() {
@@ -155,6 +158,7 @@ function bindEvents() {
   });
   window.addEventListener('hashchange', () => setActivePage(getPageFromHash(), true));
   document.getElementById('saveNow').addEventListener('click', () => saveState(true));
+  document.getElementById('refreshWeather').addEventListener('click', () => refreshWeather(true));
   document.getElementById('printPlanner').addEventListener('click', () => window.print());
   document.getElementById('toggleDark').addEventListener('click', () => {
     state.dark = !state.dark;
@@ -215,6 +219,7 @@ function render() {
   renderOwned();
   renderChecklists();
   renderBudget();
+  renderWeather();
   lucide.createIcons();
   setActivePage(getPageFromHash(), false);
   applySearch();
@@ -248,6 +253,25 @@ function setActivePage(page, scrollToPage = false) {
   }
 }
 
+async function refreshWeather(showToast = false) {
+  weatherError = null;
+  renderWeather();
+  try {
+    const response = await fetch('/api/weather');
+    if (!response.ok) throw new Error('Weather unavailable');
+    weatherData = await response.json();
+    renderMetrics();
+    renderWeather();
+    lucide.createIcons();
+    if (showToast) toast('Weather refreshed.');
+  } catch (error) {
+    weatherError = error.message;
+    renderMetrics();
+    renderWeather();
+    if (showToast) toast('Weather is unavailable right now.');
+  }
+}
+
 function renderMetrics() {
   const unchecked = getUncheckedCount();
   const mealsRemaining = days.reduce((sum, day) => {
@@ -258,6 +282,7 @@ function renderMetrics() {
   const alcoholEstimate = getShoppingItems().filter(item => item.category === 'Alcohol').length * 18 + 450;
   const tripStart = new Date('2026-07-18T00:00:00');
   const diff = Math.max(0, Math.ceil((tripStart - new Date()) / 86400000));
+  const weatherMetric = getWeatherMetric();
   const metrics = [
     ['Countdown', `${diff}`, 'days until Norris Lake'],
     ['People', state.people.length, 'family travelers'],
@@ -265,7 +290,7 @@ function renderMetrics() {
     ['Unchecked', unchecked, 'master tasks remaining'],
     ['Grocery Est.', money(groceryEstimate), 'auto list estimate'],
     ['Alcohol Est.', money(alcoholEstimate), 'drinks and supplies'],
-    ['Weather', 'TBD', 'add forecast week-of'],
+    weatherMetric,
     ['Knoxville', 'Jul 24', 'night out badge']
   ];
 
@@ -276,6 +301,184 @@ function renderMetrics() {
       <span>${hint}</span>
     </article>
   `).join('');
+}
+
+function getWeatherMetric() {
+  if (weatherData?.forecast?.current) {
+    const current = weatherData.forecast.current;
+    return ['Weather', `${round(current.temperature_2m)}F`, weatherLabel(current.weather_code)];
+  }
+  if (weatherError) return ['Weather', 'Offline', 'forecast unavailable'];
+  return ['Weather', 'Loading', 'Flat Hollow forecast'];
+}
+
+function renderWeather() {
+  const currentNode = document.getElementById('weatherCurrent');
+  const hourlyNode = document.getElementById('hourlyForecast');
+  const dailyNode = document.getElementById('dailyForecast');
+  const boatNode = document.getElementById('weatherBoatRead');
+  const updatedNode = document.getElementById('weatherUpdated');
+  if (!currentNode || !hourlyNode || !dailyNode || !boatNode || !updatedNode) return;
+
+  if (weatherError) {
+    currentNode.innerHTML = `
+      <span class="label">Weather unavailable</span>
+      <strong>--</strong>
+      <p class="weather-condition">Could not reach the live forecast.</p>
+    `;
+    hourlyNode.innerHTML = '';
+    dailyNode.innerHTML = '';
+    boatNode.textContent = 'Try again in a bit';
+    updatedNode.textContent = weatherError;
+    return;
+  }
+
+  if (!weatherData?.forecast?.current) {
+    currentNode.innerHTML = `
+      <span class="label">Live weather</span>
+      <strong>Loading</strong>
+      <p class="weather-condition">Checking Flat Hollow Marina area...</p>
+    `;
+    hourlyNode.innerHTML = '';
+    dailyNode.innerHTML = '';
+    boatNode.textContent = 'Waiting on forecast';
+    updatedNode.textContent = 'Live weather will refresh from the server.';
+    return;
+  }
+
+  const { forecast, location, fetchedAt, source } = weatherData;
+  const current = forecast.current;
+  const today = dailyRows(forecast)[0];
+  const boat = boatRead(current, today);
+  currentNode.innerHTML = `
+    <div>
+      <span class="label">${escapeHtml(location.name)}</span>
+      <strong>${round(current.temperature_2m)}&deg;</strong>
+      <p class="weather-condition"><i data-lucide="${weatherIcon(current.weather_code)}"></i> ${weatherLabel(current.weather_code)}</p>
+    </div>
+    <div class="weather-facts">
+      <span><i data-lucide="thermometer"></i> Feels ${round(current.apparent_temperature)}&deg;</span>
+      <span><i data-lucide="wind"></i> ${round(current.wind_speed_10m)} mph</span>
+      <span><i data-lucide="cloud-rain"></i> ${round(current.precipitation, 2)} in now</span>
+      <span><i data-lucide="droplets"></i> ${round(current.relative_humidity_2m)}%</span>
+    </div>
+  `;
+  boatNode.textContent = boat.title;
+  updatedNode.textContent = `${boat.detail} Updated ${formatDateTime(fetchedAt)} from ${source}.`;
+
+  hourlyNode.innerHTML = hourlyRows(forecast).map(hour => `
+    <article class="hour-card searchable" data-search="${hour.time} ${weatherLabel(hour.weather_code)}">
+      <span>${formatHour(hour.time)}</span>
+      <strong>${round(hour.temperature_2m)}&deg;</strong>
+      <span><i data-lucide="${weatherIcon(hour.weather_code)}"></i> ${weatherLabel(hour.weather_code)}</span>
+      <span>Rain ${hour.precipitation_probability ?? 0}%</span>
+      <span>Wind ${round(hour.wind_speed_10m)} mph</span>
+    </article>
+  `).join('');
+
+  dailyNode.innerHTML = dailyRows(forecast).map(day => `
+    <article class="forecast-card ${isTripDay(day.time) ? 'trip-day' : ''} searchable" data-search="${day.time} ${weatherLabel(day.weather_code)}">
+      <span>${formatDay(day.time)}${isTripDay(day.time) ? ' - Trip' : ''}</span>
+      <strong>${round(day.temperature_2m_max)}&deg; / ${round(day.temperature_2m_min)}&deg;</strong>
+      <span><i data-lucide="${weatherIcon(day.weather_code)}"></i> ${weatherLabel(day.weather_code)}</span>
+      <span>Rain ${day.precipitation_probability_max ?? 0}% (${round(day.precipitation_sum, 2)} in)</span>
+      <span>Wind ${round(day.wind_speed_10m_max)} mph, gusts ${round(day.wind_gusts_10m_max)} mph</span>
+      <span>UV ${round(day.uv_index_max, 1)}</span>
+    </article>
+  `).join('');
+}
+
+function hourlyRows(forecast) {
+  const hourly = forecast.hourly || {};
+  const currentHour = forecast.current?.time?.slice(0, 13);
+  const start = Math.max(0, hourly.time?.findIndex(time => time.slice(0, 13) >= currentHour) ?? 0);
+  return (hourly.time || []).slice(start, start + 12).map((time, index) => {
+    const i = start + index;
+    return {
+      time,
+      temperature_2m: hourly.temperature_2m?.[i],
+      precipitation_probability: hourly.precipitation_probability?.[i],
+      precipitation: hourly.precipitation?.[i],
+      weather_code: hourly.weather_code?.[i],
+      wind_speed_10m: hourly.wind_speed_10m?.[i],
+      wind_gusts_10m: hourly.wind_gusts_10m?.[i],
+      uv_index: hourly.uv_index?.[i]
+    };
+  });
+}
+
+function dailyRows(forecast) {
+  const daily = forecast.daily || {};
+  return (daily.time || []).map((time, i) => ({
+    time,
+    weather_code: daily.weather_code?.[i],
+    temperature_2m_max: daily.temperature_2m_max?.[i],
+    temperature_2m_min: daily.temperature_2m_min?.[i],
+    precipitation_probability_max: daily.precipitation_probability_max?.[i],
+    precipitation_sum: daily.precipitation_sum?.[i],
+    wind_speed_10m_max: daily.wind_speed_10m_max?.[i],
+    wind_gusts_10m_max: daily.wind_gusts_10m_max?.[i],
+    uv_index_max: daily.uv_index_max?.[i],
+    sunrise: daily.sunrise?.[i],
+    sunset: daily.sunset?.[i]
+  }));
+}
+
+function boatRead(current, today) {
+  const rain = today?.precipitation_probability_max ?? 0;
+  const wind = Math.max(current?.wind_speed_10m ?? 0, today?.wind_speed_10m_max ?? 0);
+  const gusts = Math.max(current?.wind_gusts_10m ?? 0, today?.wind_gusts_10m_max ?? 0);
+  if (rain >= 65 || gusts >= 30) {
+    return { title: 'Watch the water', detail: 'Storm odds or gusts are high enough to keep boat plans flexible.' };
+  }
+  if (rain >= 40 || wind >= 18 || gusts >= 24) {
+    return { title: 'Plan around weather', detail: 'Good lake time may still happen, but keep an eye on wind and rain windows.' };
+  }
+  return { title: 'Good lake window', detail: 'Current conditions look friendly for marina runs and lake time.' };
+}
+
+function weatherLabel(code) {
+  const labels = {
+    0: 'Clear sky',
+    1: 'Mostly clear',
+    2: 'Partly cloudy',
+    3: 'Cloudy',
+    45: 'Fog',
+    48: 'Rime fog',
+    51: 'Light drizzle',
+    53: 'Drizzle',
+    55: 'Heavy drizzle',
+    56: 'Freezing drizzle',
+    57: 'Freezing drizzle',
+    61: 'Light rain',
+    63: 'Rain',
+    65: 'Heavy rain',
+    66: 'Freezing rain',
+    67: 'Freezing rain',
+    71: 'Light snow',
+    73: 'Snow',
+    75: 'Heavy snow',
+    77: 'Snow grains',
+    80: 'Rain showers',
+    81: 'Rain showers',
+    82: 'Heavy showers',
+    85: 'Snow showers',
+    86: 'Snow showers',
+    95: 'Thunderstorms',
+    96: 'Thunderstorms',
+    99: 'Thunderstorms'
+  };
+  return labels[code] || 'Forecast';
+}
+
+function weatherIcon(code) {
+  if ([0, 1].includes(code)) return 'sun';
+  if ([2, 3].includes(code)) return 'cloud-sun';
+  if ([45, 48].includes(code)) return 'cloud-fog';
+  if ([95, 96, 99].includes(code)) return 'cloud-lightning';
+  if (code >= 51 && code <= 82) return 'cloud-rain';
+  if (code >= 71 && code <= 86) return 'cloud-snow';
+  return 'cloud';
 }
 
 function renderPeople() {
@@ -629,6 +832,36 @@ function normalize(value) {
 
 function title(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function round(value, digits = 0) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '--';
+  return Number(value).toFixed(digits).replace(/\.0+$/, '');
+}
+
+function formatHour(value) {
+  return new Date(value).toLocaleTimeString('en-US', { hour: 'numeric' });
+}
+
+function formatDay(value) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+function formatDateTime(value) {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+function isTripDay(value) {
+  return value >= '2026-07-18' && value <= '2026-07-26';
 }
 
 function money(value) {

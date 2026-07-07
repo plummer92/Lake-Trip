@@ -12,6 +12,7 @@
       <div class="hero__overlay"></div>
       <nav class="topbar" aria-label="Planner navigation">
         <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+        <a href="#weather" data-nav="weather">Weather</a>
         <a href="#daily" data-nav="daily">Daily</a>
         <a href="#meals" data-nav="meals">Meals</a>
         <a href="#shopping" data-nav="shopping">Shopping</a>
@@ -79,6 +80,37 @@
           </div>
           <div class="pill-list" id="peopleList"></div>
         </article>
+      </section>
+
+      <section class="shell planner-section page" id="weather" data-page="weather">
+        <div class="section-heading">
+          <p class="eyebrow">Live at the cabin area</p>
+          <h2>Norris Lake Weather</h2>
+        </div>
+        <div class="weather-layout">
+          <article class="weather-current card" id="weatherCurrent">
+            <span class="label">Loading Weather</span>
+            <strong>Checking Flat Hollow...</strong>
+          </article>
+          <aside class="side-panel weather-note">
+            <div class="section-heading compact">
+              <p class="eyebrow">Boat read</p>
+              <h2 id="weatherBoatRead">Waiting on forecast</h2>
+            </div>
+            <p id="weatherUpdated">Live weather will refresh from the server.</p>
+            <button class="button secondary" id="refreshWeather"><i data-lucide="refresh-cw"></i> Refresh Weather</button>
+          </aside>
+        </div>
+        <div class="section-heading compact weather-subhead">
+          <p class="eyebrow">Next few hours</p>
+          <h2>Hourly Outlook</h2>
+        </div>
+        <div class="hourly-strip" id="hourlyForecast"></div>
+        <div class="section-heading compact weather-subhead">
+          <p class="eyebrow">Projected weather out</p>
+          <h2>16-Day Forecast</h2>
+        </div>
+        <div class="forecast-grid" id="dailyForecast"></div>
       </section>
 
       <section class="shell planner-section page" id="daily" data-page="daily">

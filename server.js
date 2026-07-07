@@ -9,9 +9,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const databaseUrl = process.env.DATABASE_URL;
+const weatherLocation = {
+  name: 'Flat Hollow Marina / Take-5 Cabin Area',
+  latitude: 36.405,
+  longitude: -83.9324,
+  timezone: 'America/New_York'
+};
 
 let pool = null;
 let dbReady = false;
+let weatherCache = null;
 
 if (databaseUrl) {
   pool = new Pool({
@@ -44,6 +51,76 @@ app.get('/api/health', async (_req, res) => {
     res.json({ ok: true, mode: connected ? 'neon' : 'localStorage' });
   } catch (error) {
     res.status(500).json({ ok: false, mode: 'localStorage', error: error.message });
+  }
+});
+
+app.get('/api/weather', async (_req, res) => {
+  try {
+    const now = Date.now();
+    if (weatherCache && now - weatherCache.fetchedAt < 10 * 60 * 1000) {
+      return res.json(weatherCache.payload);
+    }
+
+    const params = new URLSearchParams({
+      latitude: String(weatherLocation.latitude),
+      longitude: String(weatherLocation.longitude),
+      timezone: weatherLocation.timezone,
+      temperature_unit: 'fahrenheit',
+      wind_speed_unit: 'mph',
+      precipitation_unit: 'inch',
+      forecast_days: '16',
+      current: [
+        'temperature_2m',
+        'relative_humidity_2m',
+        'apparent_temperature',
+        'is_day',
+        'precipitation',
+        'rain',
+        'showers',
+        'weather_code',
+        'cloud_cover',
+        'wind_speed_10m',
+        'wind_gusts_10m',
+        'wind_direction_10m'
+      ].join(','),
+      hourly: [
+        'temperature_2m',
+        'precipitation_probability',
+        'precipitation',
+        'weather_code',
+        'wind_speed_10m',
+        'wind_gusts_10m',
+        'uv_index'
+      ].join(','),
+      daily: [
+        'weather_code',
+        'temperature_2m_max',
+        'temperature_2m_min',
+        'precipitation_probability_max',
+        'precipitation_sum',
+        'wind_speed_10m_max',
+        'wind_gusts_10m_max',
+        'uv_index_max',
+        'sunrise',
+        'sunset'
+      ].join(',')
+    });
+
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if (!response.ok) throw new Error(`Open-Meteo returned ${response.status}`);
+
+    const forecast = await response.json();
+    const payload = {
+      location: weatherLocation,
+      source: 'Open-Meteo',
+      fetchedAt: new Date(now).toISOString(),
+      forecast
+    };
+
+    weatherCache = { fetchedAt: now, payload };
+    res.json(payload);
+  } catch (error) {
+    res.status(502).json({ error: error.message });
   }
 });
 
