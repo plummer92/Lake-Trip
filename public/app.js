@@ -288,6 +288,7 @@ function bindEvents() {
     });
   });
   window.addEventListener('hashchange', () => setActivePage(getPageFromHash(), true));
+  window.addEventListener('popstate', () => setActivePage(getPageFromHash(), true));
   document.getElementById('saveNow').addEventListener('click', () => saveState(true));
   document.getElementById('refreshWeather').addEventListener('click', () => refreshWeather(true));
   document.getElementById('printPlanner').addEventListener('click', () => window.print());
@@ -352,7 +353,7 @@ function render() {
   renderBudget();
   renderWeather();
   lucide.createIcons();
-  setActivePage(getPageFromHash(), false);
+  setActivePage(getPageFromHash(), Boolean(window.location.hash));
   applySearch();
 }
 
@@ -364,7 +365,8 @@ function getPageFromHash() {
 function navigatePage(page) {
   if (!pageIds.includes(page)) return;
   if (window.location.hash !== `#${page}`) {
-    window.location.hash = page;
+    history.pushState(null, '', `#${page}`);
+    setActivePage(page, true);
     return;
   }
   setActivePage(page, true);
@@ -381,7 +383,9 @@ function setActivePage(page, scrollToPage = false) {
   });
   document.body.dataset.page = page;
   if (scrollToPage) {
-    document.querySelector('main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+      document.querySelector('main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 }
 
@@ -778,13 +782,15 @@ function shoppingRow(item) {
         <input type="checkbox" data-shopping-check="${item.id}" ${checked}>
         <span>${escapeHtml(item.name)}</span>
       </label>
-      <input class="qty" data-shopping-qty="${item.id}" value="${escapeHtml(qty)}" aria-label="${escapeHtml(item.name)} quantity">
-      <select class="buyer-select" data-shopping-buyer="${item.id}" aria-label="${escapeHtml(item.name)} buyer">
-        <option value="">Buyer</option>
-        ${state.people.map(person => `<option value="${escapeHtml(person)}" ${person === buyer ? 'selected' : ''}>${escapeHtml(person)}</option>`).join('')}
-      </select>
-      <input class="cost-input" type="number" min="0" step="0.01" data-shopping-cost="${item.id}" value="${escapeHtml(cost)}" placeholder="Cost" aria-label="${escapeHtml(item.name)} cost">
-      ${item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : ''}
+      <div class="shopping-controls">
+        <input class="qty" data-shopping-qty="${item.id}" value="${escapeHtml(qty)}" placeholder="Qty" aria-label="${escapeHtml(item.name)} quantity">
+        <input class="cost-input" type="number" min="0" step="0.01" data-shopping-cost="${item.id}" value="${escapeHtml(cost)}" placeholder="Cost" aria-label="${escapeHtml(item.name)} cost">
+        <select class="buyer-select" data-shopping-buyer="${item.id}" aria-label="${escapeHtml(item.name)} buyer">
+          <option value="">Buyer</option>
+          ${state.people.map(person => `<option value="${escapeHtml(person)}" ${person === buyer ? 'selected' : ''}>${escapeHtml(person)}</option>`).join('')}
+        </select>
+        ${item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : ''}
+      </div>
     </div>
   `;
 }

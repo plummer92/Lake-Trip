@@ -415,6 +415,11 @@ body.dark textarea {
   gap: 14px;
 }
 
+#shoppingLists {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
 .day-card,
 .meal-day,
 .list-card,
@@ -479,8 +484,8 @@ textarea {
   font-weight: 750;
 }
 
-.activity-row input,
-.check-row input {
+.activity-row input[type="checkbox"],
+.check-row input[type="checkbox"] {
   width: 18px;
   min-height: 18px;
 }
@@ -507,6 +512,16 @@ textarea {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 16px;
+}
+
+#shopping .toolbar .inline-form {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 240px) minmax(90px, 120px) auto;
+}
+
+#shopping .toolbar .button {
+  min-width: 92px;
 }
 
 .weather-layout {
@@ -672,9 +687,8 @@ body.dark .budget-table {
 }
 
 .shopping-row {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) 82px minmax(132px, 0.8fr) 88px auto;
-  align-items: center;
+  display: block;
+  padding: 10px;
 }
 
 .check-row.done span {
@@ -689,16 +703,42 @@ body.dark .budget-table {
   min-width: 0;
 }
 
-.qty {
-  width: 88px;
+.shopping-row .item-main {
+  justify-content: flex-start;
+  margin-bottom: 9px;
+}
+
+.shopping-row .item-main span {
+  overflow-wrap: anywhere;
+}
+
+.shopping-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+}
+
+.shopping-row .qty {
+  width: 100%;
   min-height: 34px;
   padding: 6px 8px;
 }
 
-.buyer-select,
-.cost-input {
+.shopping-row .buyer-select,
+.shopping-row .cost-input {
+  width: 100%;
+  min-width: 0;
   min-height: 34px;
   padding: 6px 8px;
+}
+
+.shopping-row .buyer-select {
+  grid-column: 1 / -1;
+}
+
+.shopping-controls button {
+  grid-column: 1 / -1;
 }
 
 .buyer-summary {
@@ -835,6 +875,10 @@ svg {
     width: 100%;
   }
 
+  #shopping .toolbar .inline-form {
+    grid-template-columns: 1fr;
+  }
+
   .topbar {
     border-radius: 8px;
   }
@@ -855,21 +899,8 @@ svg {
     min-width: 0;
   }
 
-  .shopping-row {
-    grid-template-columns: 1fr 84px;
-  }
-
-  .shopping-row .item-main {
-    grid-column: 1 / -1;
-  }
-
-  .shopping-row .buyer-select {
-    grid-column: 1 / 2;
-  }
-
-  .shopping-row .cost-input,
-  .shopping-row .qty {
-    width: 100%;
+  .shopping-controls {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
