@@ -206,7 +206,7 @@ function createDefaultState() {
       dinner: day.id === '2026-07-24' ? 'Restaurant' : ['Steaks', 'Tacos', 'Pulled pork sandwiches', 'Grilled chicken', 'Pizza night', 'Fajitas', 'Restaurant', 'Kabobs', 'Smoked ribs'][index],
       activities: {
         boatTime: true,
-        fishing: index % 2 === 0,
+        drinkingBeer: true,
         swimming: true,
         tubing: index > 1 && index < 7,
         relaxing: true,
@@ -276,8 +276,14 @@ function normalizeDayPlan(plan) {
     'Pulled pork': 'Pulled pork sandwiches',
     Pizza: 'Pizza night'
   };
+  const activities = {
+    ...(plan.activities || {}),
+    drinkingBeer: plan.activities?.drinkingBeer ?? true
+  };
+  delete activities.fishing;
   return {
     ...plan,
+    activities,
     dinner: dinnerMap[plan.dinner] || plan.dinner || ''
   };
 }
@@ -650,7 +656,7 @@ function renderDays() {
         ${dinnerDecision(plan.dinner)}
         <div class="activity-row">
           ${activityField(day.id, 'boatTime', 'Boat')}
-          ${activityField(day.id, 'fishing', 'Fishing')}
+          ${activityField(day.id, 'drinkingBeer', 'Drinking beer')}
           ${activityField(day.id, 'swimming', 'Swimming')}
           ${activityField(day.id, 'tubing', 'Tubing')}
           ${activityField(day.id, 'relaxing', 'Relax')}
