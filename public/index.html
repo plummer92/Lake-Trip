@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Take-5 Cabin Lake Planner</title>
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__overlay"></div>
+      <nav class="topbar" aria-label="Planner navigation">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#daily">Daily</a>
+        <a href="#meals">Meals</a>
+        <a href="#shopping">Shopping</a>
+        <a href="#packing">Packing</a>
+        <a href="#budget">Budget</a>
+      </nav>
+      <div class="hero__content">
+        <p class="eyebrow">Norris Lake, TN • Flat Hollow Marina</p>
+        <h1>Take-5 Cabin Lake Planner</h1>
+        <p class="subtitle">Norris Lake • Flat Hollow Marina • Family Trip Planner</p>
+        <div class="hero__chips">
+          <span><i data-lucide="calendar-days"></i> July 18-26, 2026</span>
+          <span><i data-lucide="ship-wheel"></i> Boat slip at Flat Hollow Marina</span>
+          <span class="gold"><i data-lucide="martini"></i> Knoxville Night Out • Fri, July 24</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="shell status-strip" aria-label="Trip status">
+        <div>
+          <span class="label">Sync</span>
+          <strong id="syncMode">Checking...</strong>
+        </div>
+        <div>
+          <span class="label">Last Saved</span>
+          <strong id="lastSaved">Not yet</strong>
+        </div>
+        <div class="actions">
+          <button class="button secondary" id="exportJson"><i data-lucide="download"></i> Export</button>
+          <label class="button secondary file-button">
+            <i data-lucide="upload"></i> Import
+            <input id="importJson" type="file" accept="application/json">
+          </label>
+          <button class="button secondary" id="printPlanner"><i data-lucide="printer"></i> Print</button>
+          <button class="button" id="saveNow"><i data-lucide="save"></i> Save</button>
+        </div>
+      </section>
+
+      <section class="shell dashboard" id="dashboard">
+        <div class="section-heading">
+          <p class="eyebrow">Family command center</p>
+          <h2>Trip Dashboard</h2>
+        </div>
+        <div class="metric-grid" id="metrics"></div>
+      </section>
+
+      <section class="shell split">
+        <article class="about-card">
+          <div class="icon-badge"><i data-lucide="home"></i></div>
+          <div>
+            <p class="eyebrow">About Take-5 Cabin</p>
+            <h2>Named for family, candy, and slowing down.</h2>
+            <p>Take-5 Cabin is named after the family’s love of Take 5 candy and the family acronym: <strong>T</strong>ony, <strong>A</strong>my, <strong>K</strong>ylee, <strong>E</strong>lleman.</p>
+          </div>
+        </article>
+        <article class="people-panel">
+          <div class="section-heading compact">
+            <p class="eyebrow">Crew</p>
+            <h2>People Attending</h2>
+          </div>
+          <div class="inline-form">
+            <input id="personName" type="text" placeholder="Add traveler">
+            <button class="button icon" id="addPerson" aria-label="Add traveler"><i data-lucide="plus"></i></button>
+          </div>
+          <div class="pill-list" id="peopleList"></div>
+        </article>
+      </section>
+
+      <section class="shell planner-section" id="daily">
+        <div class="section-heading">
+          <p class="eyebrow">July 18-26</p>
+          <h2>Daily Lake Plan</h2>
+        </div>
+        <div class="day-grid" id="dayGrid"></div>
+      </section>
+
+      <section class="shell planner-section" id="meals">
+        <div class="section-heading">
+          <p class="eyebrow">Meals drive groceries</p>
+          <h2>Meal Planner</h2>
+        </div>
+        <div class="meal-board" id="mealBoard"></div>
+      </section>
+
+      <section class="shell planner-section" id="shopping">
+        <div class="section-heading">
+          <p class="eyebrow">Nearest grocery is about 45 minutes away</p>
+          <h2>Auto Shopping List</h2>
+        </div>
+        <div class="toolbar">
+          <div class="inline-form grow">
+            <input id="customItemName" type="text" placeholder="Add custom shopping item">
+            <select id="customItemCategory"></select>
+            <input id="customItemQty" type="text" placeholder="Qty">
+            <button class="button" id="addShoppingItem"><i data-lucide="plus"></i> Add</button>
+          </div>
+        </div>
+        <div class="shopping-layout">
+          <div class="list-columns" id="shoppingLists"></div>
+          <aside class="side-panel">
+            <div class="section-heading compact">
+              <p class="eyebrow">Already have</p>
+              <h2>Inventory</h2>
+            </div>
+            <div class="inline-form">
+              <input id="ownedItem" type="text" placeholder="Charcoal, coolers, life jackets">
+              <button class="button icon" id="addOwned" aria-label="Add owned item"><i data-lucide="plus"></i></button>
+            </div>
+            <div class="pill-list" id="ownedList"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="shell planner-section" id="packing">
+        <div class="section-heading">
+          <p class="eyebrow">Boat • Cabin • Personal</p>
+          <h2>Master Checklist</h2>
+        </div>
+        <div class="toolbar">
+          <input id="searchEverything" class="search" type="search" placeholder="Search meals, groceries, packing, notes">
+          <button class="button secondary" id="toggleDark"><i data-lucide="moon"></i> Theme</button>
+        </div>
+        <div class="checklist-grid" id="checklists"></div>
+      </section>
+
+      <section class="shell planner-section" id="budget">
+        <div class="section-heading">
+          <p class="eyebrow">Budget tracker</p>
+          <h2>Trip Costs</h2>
+        </div>
+        <div class="budget-layout">
+          <div class="budget-table" id="budgetTable"></div>
+          <div class="budget-summary" id="budgetSummary"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
