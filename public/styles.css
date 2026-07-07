@@ -288,6 +288,7 @@ body.dark .about-card h2 {
 .metric-grid > *,
 .day-grid > *,
 .meal-board > *,
+.meal-planner-layout > *,
 .list-columns > *,
 .checklist-grid > *,
 .forecast-grid > *,
@@ -417,6 +418,119 @@ body.dark textarea {
   gap: 14px;
 }
 
+.meal-planner-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.meal-bank {
+  padding: 18px;
+  position: sticky;
+  top: 14px;
+}
+
+.meal-idea-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.meal-bank .inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+}
+
+.meal-bank .button.icon {
+  width: 46px;
+}
+
+.meal-idea-card,
+.assigned-dinner {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+body.dark .meal-idea-card,
+body.dark .assigned-dinner {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.meal-idea-card {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  cursor: grab;
+  transition: 160ms ease;
+}
+
+.meal-idea-card strong {
+  overflow-wrap: anywhere;
+}
+
+.meal-idea-card button,
+.assigned-dinner button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 4px;
+}
+
+.meal-idea-card.dragging {
+  opacity: 0.55;
+}
+
+.meal-idea-card.selected,
+.meal-drop-zone.drag-over {
+  border-color: rgba(242, 184, 75, 0.86);
+  box-shadow: 0 0 0 3px rgba(242, 184, 75, 0.22);
+}
+
+.drag-handle {
+  color: var(--muted);
+  display: inline-flex;
+}
+
+.meal-drop-zone {
+  min-height: 155px;
+  transition: 160ms ease;
+}
+
+.meal-drop-zone.has-dinner {
+  border-color: rgba(30, 90, 66, 0.28);
+}
+
+.assigned-dinner {
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(232, 242, 241, 0.88), rgba(255, 255, 255, 0.72)),
+    repeating-linear-gradient(90deg, rgba(154, 104, 63, 0.08) 0 10px, transparent 10px 20px);
+}
+
+.assigned-dinner .label {
+  grid-column: 1 / -1;
+}
+
+.assigned-dinner strong {
+  color: var(--lake-850);
+  font-size: 1.14rem;
+  overflow-wrap: anywhere;
+}
+
+body.dark .assigned-dinner strong {
+  color: white;
+}
+
 #shoppingLists {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
@@ -515,11 +629,6 @@ textarea {
 .check-row input[type="checkbox"] {
   width: 18px;
   min-height: 18px;
-}
-
-.meal-selects {
-  display: grid;
-  gap: 10px;
 }
 
 .toolbar {
@@ -1031,6 +1140,7 @@ svg {
   .metric-grid,
   .day-grid,
   .meal-board,
+  .meal-planner-layout,
   .list-columns,
   .checklist-grid,
   .forecast-grid,
@@ -1062,6 +1172,10 @@ svg {
 
   #shopping .toolbar .inline-form {
     grid-template-columns: 1fr;
+  }
+
+  .meal-bank {
+    position: static;
   }
 
   .topbar {

@@ -8,9 +8,7 @@ const categories = [
   'Boat', 'Cabin', 'Fishing', 'Personal', 'Miscellaneous'
 ];
 
-const mealOptions = {
-  dinner: ['Steaks', 'Grilled chicken', 'Pulled pork sandwiches', 'Tacos', 'Fajitas', 'Spaghetti', 'Pizza night', 'Kabobs', 'Grilled shrimp', 'Smoked ribs', 'Burgers and hot dogs', 'Restaurant']
-};
+const defaultDinnerIdeas = ['Steaks', 'Tacos', 'Pulled pork sandwiches', 'Grilled chicken', 'Pizza night', 'Fajitas', 'Restaurant', 'Kabobs', 'Smoked ribs'];
 
 const mealGroceries = {
   Eggs: [['Breakfast', 'Eggs', '2 dozen'], ['Dairy', 'Butter', '1 lb']],
@@ -197,6 +195,7 @@ let syncMode = 'localStorage';
 let saveTimer = null;
 let weatherData = null;
 let weatherError = null;
+let selectedMealIdea = '';
 
 function createDefaultState() {
   return {
@@ -217,6 +216,7 @@ function createDefaultState() {
       notes: day.id === '2026-07-24' ? 'Knoxville dinner and night out.' : ''
     }])),
     checks: Object.fromEntries(Object.entries(checklistSeeds).flatMap(([section, items]) => items.map(item => [`${section}:${item}`, false]))),
+    mealIdeas: [...defaultDinnerIdeas],
     customShopping: [],
     shoppingChecks: {},
     shoppingQty: {},
@@ -255,10 +255,12 @@ async function loadState() {
 function mergeState(incoming) {
   const base = createDefaultState();
   const mergedDays = { ...base.days, ...(incoming.days || {}) };
+  const incomingMealIdeas = Array.isArray(incoming.mealIdeas) ? incoming.mealIdeas : base.mealIdeas;
   return {
     ...base,
     ...incoming,
     days: Object.fromEntries(Object.entries(mergedDays).map(([id, plan]) => [id, normalizeDayPlan(plan)])),
+    mealIdeas: normalizeMealIdeas([...incomingMealIdeas, ...Object.values(mergedDays).map(plan => plan?.dinner)]),
     checks: { ...base.checks, ...(incoming.checks || {}) },
     shoppingChecks: { ...(incoming.shoppingChecks || {}) },
     shoppingQty: { ...(incoming.shoppingQty || {}) },
@@ -306,6 +308,10 @@ function bindEvents() {
     if (event.key === 'Enter') addOwned();
   });
   document.getElementById('addShoppingItem').addEventListener('click', addCustomShopping);
+  document.getElementById('addMealIdea').addEventListener('click', addMealIdea);
+  document.getElementById('mealIdeaName').addEventListener('keydown', event => {
+    if (event.key === 'Enter') addMealIdea();
+  });
   document.getElementById('exportJson').addEventListener('click', exportJson);
   document.getElementById('importJson').addEventListener('change', importJson);
   document.getElementById('searchEverything').addEventListener('input', applySearch);
@@ -675,20 +681,6 @@ function dinnerDecision(dinner) {
   `;
 }
 
-function mealField(dayId, key, label) {
-  const options = mealOptions[key] || [];
-  const value = state.days[dayId][key] || '';
-  return `
-    <div class="field">
-      <label>${label}</label>
-      <select data-day="${dayId}" data-field="${key}">
-        <option value="">Pick meal</option>
-        ${options.map(option => `<option ${option === value ? 'selected' : ''}>${option}</option>`).join('')}
-      </select>
-    </div>
-  `;
-}
-
 function activityField(dayId, key, label) {
   return `
     <label>
@@ -713,20 +705,131 @@ function updateDayField(event) {
 }
 
 function renderMeals() {
+  const ideas = normalizeMealIdeas(state.mealIdeas);
+  state.mealIdeas = ideas;
+  document.getElementById('mealIdeaList').innerHTML = ideas.map(idea => mealIdeaCard(idea)).join('');
+
   document.getElementById('mealBoard').innerHTML = days.map(day => {
     const plan = state.days[day.id];
+    const dinner = plan.dinner || '';
     return `
-      <article class="meal-day searchable" data-search="${day.label} ${plan.dinner}">
+      <article class="meal-day meal-drop-zone searchable ${dinner ? 'has-dinner' : ''}" data-meal-drop-day="${day.id}" data-search="${day.label} ${dinner}" tabindex="0">
         <h3>${day.label}</h3>
-        <div class="meal-selects">
-          ${mealField(day.id, 'dinner', 'Dinner')}
+        <div class="assigned-dinner">
+          <span class="label">Dinner</span>
+          <strong>${escapeHtml(dinner || 'Drop dinner here')}</strong>
+          ${dinner ? `<button type="button" data-clear-dinner="${day.id}" aria-label="Clear dinner for ${day.label}"><i data-lucide="x"></i></button>` : ''}
         </div>
       </article>
     `;
   }).join('');
-  document.querySelectorAll('#mealBoard [data-day][data-field]').forEach(input => {
-    input.addEventListener('change', updateDayField);
+
+  bindMealIdeaEvents();
+  bindMealDropEvents();
+}
+
+function mealIdeaCard(idea) {
+  const selected = selectedMealIdea === idea ? 'selected' : '';
+  return `
+    <div class="meal-idea-card ${selected}" draggable="true" data-meal-idea="${escapeHtml(idea)}" tabindex="0">
+      <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
+      <strong>${escapeHtml(idea)}</strong>
+      <button type="button" data-remove-meal-idea="${escapeHtml(idea)}" aria-label="Remove ${escapeHtml(idea)}"><i data-lucide="x"></i></button>
+    </div>
+  `;
+}
+
+function bindMealIdeaEvents() {
+  document.querySelectorAll('[data-meal-idea]').forEach(card => {
+    card.addEventListener('click', event => {
+      if (event.target.closest('button')) return;
+      selectedMealIdea = card.dataset.mealIdea;
+      renderMeals();
+      lucide.createIcons();
+    });
+    card.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      selectedMealIdea = card.dataset.mealIdea;
+      renderMeals();
+      lucide.createIcons();
+    });
+    card.addEventListener('dragstart', event => {
+      selectedMealIdea = card.dataset.mealIdea;
+      event.dataTransfer.setData('text/plain', card.dataset.mealIdea);
+      event.dataTransfer.effectAllowed = 'copy';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
   });
+
+  document.querySelectorAll('[data-remove-meal-idea]').forEach(button => {
+    button.addEventListener('click', () => removeMealIdea(button.dataset.removeMealIdea));
+  });
+}
+
+function bindMealDropEvents() {
+  document.querySelectorAll('[data-meal-drop-day]').forEach(zone => {
+    zone.addEventListener('dragover', event => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', event => {
+      event.preventDefault();
+      zone.classList.remove('drag-over');
+      const dinner = event.dataTransfer.getData('text/plain') || selectedMealIdea;
+      assignDinner(zone.dataset.mealDropDay, dinner);
+    });
+    zone.addEventListener('click', event => {
+      if (event.target.closest('button') || !selectedMealIdea) return;
+      assignDinner(zone.dataset.mealDropDay, selectedMealIdea);
+    });
+    zone.addEventListener('keydown', event => {
+      if (!selectedMealIdea || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      assignDinner(zone.dataset.mealDropDay, selectedMealIdea);
+    });
+  });
+
+  document.querySelectorAll('[data-clear-dinner]').forEach(button => {
+    button.addEventListener('click', () => assignDinner(button.dataset.clearDinner, ''));
+  });
+}
+
+function addMealIdea() {
+  const input = document.getElementById('mealIdeaName');
+  const idea = input.value.trim();
+  if (!idea) return;
+  state.mealIdeas = normalizeMealIdeas([...state.mealIdeas, idea]);
+  selectedMealIdea = idea;
+  input.value = '';
+  scheduleSave();
+  renderMeals();
+  lucide.createIcons();
+}
+
+function removeMealIdea(idea) {
+  state.mealIdeas = state.mealIdeas.filter(item => normalize(item) !== normalize(idea));
+  if (selectedMealIdea === idea) selectedMealIdea = '';
+  scheduleSave();
+  renderMeals();
+  lucide.createIcons();
+}
+
+function assignDinner(dayId, dinner) {
+  if (!state.days[dayId]) return;
+  const nextDinner = String(dinner || '').trim();
+  state.days[dayId].dinner = nextDinner;
+  if (nextDinner) state.mealIdeas = normalizeMealIdeas([...state.mealIdeas, nextDinner]);
+  selectedMealIdea = nextDinner || selectedMealIdea;
+  scheduleSave();
+  renderMetrics();
+  renderDays();
+  renderMeals();
+  renderShopping();
+  lucide.createIcons();
 }
 
 function renderShopping() {
@@ -1016,6 +1119,18 @@ function groupBy(items, key) {
 
 function normalize(value) {
   return String(value).trim().toLowerCase();
+}
+
+function normalizeMealIdeas(ideas) {
+  const seen = new Set();
+  return ideas.reduce((list, idea) => {
+    const meal = String(idea || '').trim();
+    const key = normalize(meal);
+    if (!meal || seen.has(key)) return list;
+    seen.add(key);
+    list.push(meal);
+    return list;
+  }, []);
 }
 
 function title(value) {

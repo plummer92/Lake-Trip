@@ -237,10 +237,23 @@
 
       <section class="shell planner-section page" id="meals" data-page="meals">
         <div class="section-heading">
-          <p class="eyebrow">Keep it simple</p>
+          <p class="eyebrow">Manual dinner board</p>
           <h2>Dinner Planner</h2>
         </div>
-        <div class="meal-board" id="mealBoard"></div>
+        <div class="meal-planner-layout">
+          <aside class="meal-bank card">
+            <div class="section-heading compact">
+              <p class="eyebrow">Dinner ideas</p>
+              <h2>Meal Bank</h2>
+            </div>
+            <div class="inline-form">
+              <input id="mealIdeaName" type="text" placeholder="Add dinner idea">
+              <button class="button icon" id="addMealIdea" aria-label="Add dinner idea"><i data-lucide="plus"></i></button>
+            </div>
+            <div class="meal-idea-list" id="mealIdeaList"></div>
+          </aside>
+          <div class="meal-board" id="mealBoard"></div>
+        </div>
       </section>
 
       <section class="shell planner-section page" id="shopping" data-page="shopping">
