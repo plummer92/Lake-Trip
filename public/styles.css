@@ -56,7 +56,7 @@ button {
 }
 
 .hero {
-  min-height: 78vh;
+  min-height: 58vh;
   position: relative;
   color: white;
   background-image: url("assets/norris-lake-hero.png");
@@ -109,10 +109,15 @@ button {
   background: rgba(255, 255, 255, 0.16);
 }
 
+.topbar a.active {
+  color: var(--lake-950);
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .hero__content {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 80px 0 92px;
+  padding: 56px 0 68px;
 }
 
 .eyebrow {
@@ -180,6 +185,10 @@ button {
 .shell {
   width: min(1120px, calc(100% - 32px));
   margin: 24px auto;
+}
+
+.page[hidden] {
+  display: none !important;
 }
 
 .status-strip {
@@ -650,7 +659,7 @@ svg {
   }
 
   .hero {
-    min-height: 86vh;
+    min-height: 68vh;
   }
 
   .budget-row {

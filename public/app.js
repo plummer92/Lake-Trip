@@ -1,5 +1,6 @@
 const TRIP_ID = 'take-5-cabin-2026';
 const LOCAL_KEY = `planner:${TRIP_ID}`;
+const pageIds = ['dashboard', 'daily', 'meals', 'shopping', 'packing', 'budget'];
 
 const categories = [
   'Produce', 'Dairy', 'Meat', 'Frozen', 'Dry Goods', 'Snacks', 'Condiments',
@@ -146,6 +147,13 @@ function mergeState(incoming) {
 }
 
 function bindEvents() {
+  document.querySelectorAll('[data-nav]').forEach(link => {
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      navigatePage(link.dataset.nav);
+    });
+  });
+  window.addEventListener('hashchange', () => setActivePage(getPageFromHash(), true));
   document.getElementById('saveNow').addEventListener('click', () => saveState(true));
   document.getElementById('printPlanner').addEventListener('click', () => window.print());
   document.getElementById('toggleDark').addEventListener('click', () => {
@@ -208,7 +216,36 @@ function render() {
   renderChecklists();
   renderBudget();
   lucide.createIcons();
+  setActivePage(getPageFromHash(), false);
   applySearch();
+}
+
+function getPageFromHash() {
+  const page = window.location.hash.replace('#', '');
+  return pageIds.includes(page) ? page : 'dashboard';
+}
+
+function navigatePage(page) {
+  if (!pageIds.includes(page)) return;
+  if (window.location.hash !== `#${page}`) {
+    window.location.hash = page;
+    return;
+  }
+  setActivePage(page, true);
+}
+
+function setActivePage(page, scrollToPage = false) {
+  document.querySelectorAll('[data-page]').forEach(section => {
+    section.hidden = section.dataset.page !== page;
+  });
+  document.querySelectorAll('[data-nav]').forEach(link => {
+    link.classList.toggle('active', link.dataset.nav === page);
+    link.setAttribute('aria-current', link.dataset.nav === page ? 'page' : 'false');
+  });
+  document.body.dataset.page = page;
+  if (scrollToPage) {
+    document.querySelector('main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function renderMetrics() {

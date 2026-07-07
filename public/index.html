@@ -11,12 +11,12 @@
     <header class="hero">
       <div class="hero__overlay"></div>
       <nav class="topbar" aria-label="Planner navigation">
-        <a href="#dashboard">Dashboard</a>
-        <a href="#daily">Daily</a>
-        <a href="#meals">Meals</a>
-        <a href="#shopping">Shopping</a>
-        <a href="#packing">Packing</a>
-        <a href="#budget">Budget</a>
+        <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+        <a href="#daily" data-nav="daily">Daily</a>
+        <a href="#meals" data-nav="meals">Meals</a>
+        <a href="#shopping" data-nav="shopping">Shopping</a>
+        <a href="#packing" data-nav="packing">Packing</a>
+        <a href="#budget" data-nav="budget">Budget</a>
       </nav>
       <div class="hero__content">
         <p class="eyebrow">Norris Lake, TN • Flat Hollow Marina</p>
@@ -51,7 +51,7 @@
         </div>
       </section>
 
-      <section class="shell dashboard" id="dashboard">
+      <section class="shell dashboard page" id="dashboard" data-page="dashboard">
         <div class="section-heading">
           <p class="eyebrow">Family command center</p>
           <h2>Trip Dashboard</h2>
@@ -59,7 +59,7 @@
         <div class="metric-grid" id="metrics"></div>
       </section>
 
-      <section class="shell split">
+      <section class="shell split page" data-page="dashboard">
         <article class="about-card">
           <div class="icon-badge"><i data-lucide="home"></i></div>
           <div>
@@ -81,7 +81,7 @@
         </article>
       </section>
 
-      <section class="shell planner-section" id="daily">
+      <section class="shell planner-section page" id="daily" data-page="daily">
         <div class="section-heading">
           <p class="eyebrow">July 18-26</p>
           <h2>Daily Lake Plan</h2>
@@ -89,7 +89,7 @@
         <div class="day-grid" id="dayGrid"></div>
       </section>
 
-      <section class="shell planner-section" id="meals">
+      <section class="shell planner-section page" id="meals" data-page="meals">
         <div class="section-heading">
           <p class="eyebrow">Meals drive groceries</p>
           <h2>Meal Planner</h2>
@@ -97,7 +97,7 @@
         <div class="meal-board" id="mealBoard"></div>
       </section>
 
-      <section class="shell planner-section" id="shopping">
+      <section class="shell planner-section page" id="shopping" data-page="shopping">
         <div class="section-heading">
           <p class="eyebrow">Nearest grocery is about 45 minutes away</p>
           <h2>Auto Shopping List</h2>
@@ -126,7 +126,7 @@
         </div>
       </section>
 
-      <section class="shell planner-section" id="packing">
+      <section class="shell planner-section page" id="packing" data-page="packing">
         <div class="section-heading">
           <p class="eyebrow">Boat • Cabin • Personal</p>
           <h2>Master Checklist</h2>
@@ -138,7 +138,7 @@
         <div class="checklist-grid" id="checklists"></div>
       </section>
 
-      <section class="shell planner-section" id="budget">
+      <section class="shell planner-section page" id="budget" data-page="budget">
         <div class="section-heading">
           <p class="eyebrow">Budget tracker</p>
           <h2>Trip Costs</h2>
