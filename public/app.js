@@ -780,10 +780,10 @@ function shoppingRow(item) {
       </label>
       <input class="qty" data-shopping-qty="${item.id}" value="${escapeHtml(qty)}" aria-label="${escapeHtml(item.name)} quantity">
       <select class="buyer-select" data-shopping-buyer="${item.id}" aria-label="${escapeHtml(item.name)} buyer">
-        <option value="">Unassigned</option>
+        <option value="">Buyer</option>
         ${state.people.map(person => `<option value="${escapeHtml(person)}" ${person === buyer ? 'selected' : ''}>${escapeHtml(person)}</option>`).join('')}
       </select>
-      <input class="cost-input" type="number" min="0" step="0.01" data-shopping-cost="${item.id}" value="${escapeHtml(cost)}" placeholder="$" aria-label="${escapeHtml(item.name)} cost">
+      <input class="cost-input" type="number" min="0" step="0.01" data-shopping-cost="${item.id}" value="${escapeHtml(cost)}" placeholder="Cost" aria-label="${escapeHtml(item.name)} cost">
       ${item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : ''}
     </div>
   `;
