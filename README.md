@@ -50,7 +50,7 @@ Use your Neon pooled connection string with `sslmode=require`.
 4. Deploy the service.
 5. Share the Render URL with the 6 family members.
 
-Use an always-on Render plan if you want the planner to be available instantly every time. Free services can sleep when inactive.
+This Blueprint uses Render's Free web service plan. Free web services spin down after about 15 minutes without traffic and can take about a minute to wake up. The planner data stays safe because it is stored in Neon, not on Render's local filesystem.
 
 Set the environment variable:
 
