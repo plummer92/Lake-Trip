@@ -671,6 +671,12 @@ body.dark .budget-table {
   margin-bottom: 8px;
 }
 
+.shopping-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 82px minmax(132px, 0.8fr) 88px auto;
+  align-items: center;
+}
+
 .check-row.done span {
   text-decoration: line-through;
   color: var(--muted);
@@ -687,6 +693,38 @@ body.dark .budget-table {
   width: 88px;
   min-height: 34px;
   padding: 6px 8px;
+}
+
+.buyer-select,
+.cost-input {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.buyer-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.buyer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.buyer-row:last-child {
+  border-bottom: 0;
+}
+
+.buyer-row strong {
+  margin: 0;
+  color: var(--forest);
+  font-size: 1rem;
 }
 
 .budget-layout {
@@ -815,6 +853,23 @@ svg {
 
   .budget-row input {
     min-width: 0;
+  }
+
+  .shopping-row {
+    grid-template-columns: 1fr 84px;
+  }
+
+  .shopping-row .item-main {
+    grid-column: 1 / -1;
+  }
+
+  .shopping-row .buyer-select {
+    grid-column: 1 / 2;
+  }
+
+  .shopping-row .cost-input,
+  .shopping-row .qty {
+    width: 100%;
   }
 }
 

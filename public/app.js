@@ -220,6 +220,8 @@ function createDefaultState() {
     customShopping: [],
     shoppingChecks: {},
     shoppingQty: {},
+    shoppingBuyer: {},
+    shoppingCost: {},
     budget: Object.fromEntries(budgetSeeds.map(([name, planned, actual]) => [name, { planned, actual }])),
     updatedAt: null
   };
@@ -258,6 +260,10 @@ function mergeState(incoming) {
     ...incoming,
     days: Object.fromEntries(Object.entries(mergedDays).map(([id, plan]) => [id, normalizeDayPlan(plan)])),
     checks: { ...base.checks, ...(incoming.checks || {}) },
+    shoppingChecks: { ...(incoming.shoppingChecks || {}) },
+    shoppingQty: { ...(incoming.shoppingQty || {}) },
+    shoppingBuyer: { ...(incoming.shoppingBuyer || {}) },
+    shoppingCost: { ...(incoming.shoppingCost || {}) },
     budget: { ...base.budget, ...(incoming.budget || {}) }
   };
 }
@@ -736,6 +742,21 @@ function renderShopping() {
       scheduleSave();
     });
   });
+  document.querySelectorAll('[data-shopping-buyer]').forEach(select => {
+    select.addEventListener('change', () => {
+      state.shoppingBuyer[select.dataset.shoppingBuyer] = select.value;
+      scheduleSave();
+      renderBudgetSummary();
+    });
+  });
+  document.querySelectorAll('[data-shopping-cost]').forEach(input => {
+    input.addEventListener('input', () => {
+      state.shoppingCost[input.dataset.shoppingCost] = input.value;
+      scheduleSave();
+      renderBudgetSummary();
+      renderMetrics();
+    });
+  });
   document.querySelectorAll('[data-remove-custom]').forEach(button => {
     button.addEventListener('click', () => {
       state.customShopping = state.customShopping.filter(item => item.id !== button.dataset.removeCustom);
@@ -749,13 +770,20 @@ function shoppingRow(item) {
   const checked = state.shoppingChecks[item.id] ? 'checked' : '';
   const done = state.shoppingChecks[item.id] ? 'done' : '';
   const qty = state.shoppingQty[item.id] || item.qty || '';
+  const buyer = state.shoppingBuyer[item.id] || '';
+  const cost = state.shoppingCost[item.id] || '';
   return `
-    <div class="check-row ${done}">
+    <div class="check-row shopping-row ${done}">
       <label class="item-main">
         <input type="checkbox" data-shopping-check="${item.id}" ${checked}>
         <span>${escapeHtml(item.name)}</span>
       </label>
       <input class="qty" data-shopping-qty="${item.id}" value="${escapeHtml(qty)}" aria-label="${escapeHtml(item.name)} quantity">
+      <select class="buyer-select" data-shopping-buyer="${item.id}" aria-label="${escapeHtml(item.name)} buyer">
+        <option value="">Unassigned</option>
+        ${state.people.map(person => `<option value="${escapeHtml(person)}" ${person === buyer ? 'selected' : ''}>${escapeHtml(person)}</option>`).join('')}
+      </select>
+      <input class="cost-input" type="number" min="0" step="0.01" data-shopping-cost="${item.id}" value="${escapeHtml(cost)}" placeholder="$" aria-label="${escapeHtml(item.name)} cost">
       ${item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : ''}
     </div>
   `;
@@ -850,12 +878,37 @@ function renderBudgetSummary() {
   const planned = Object.values(state.budget).reduce((sum, item) => sum + Number(item.planned || 0), 0);
   const actual = Object.values(state.budget).reduce((sum, item) => sum + Number(item.actual || 0), 0);
   const pct = planned ? Math.min(100, Math.round((actual / planned) * 100)) : 0;
+  const buyerTotals = getBuyerTotals();
   document.getElementById('budgetSummary').innerHTML = `
     <span class="label">Actual Spent</span>
     <strong>${money(actual)}</strong>
     <p>Planned: ${money(planned)}<br>Remaining: ${money(planned - actual)}</p>
     <div class="progress" style="--value:${pct}%"><span></span></div>
+    <div class="buyer-summary">
+      <span class="label">Grocery Assignments</span>
+      ${buyerTotals.map(row => `
+        <div class="buyer-row">
+          <span>${escapeHtml(row.name)}</span>
+          <strong>${money(row.total)}</strong>
+        </div>
+      `).join('')}
+    </div>
   `;
+}
+
+function getBuyerTotals() {
+  const totals = new Map(state.people.map(person => [person, 0]));
+  let unassigned = 0;
+  getShoppingItems().forEach(item => {
+    const cost = Number(state.shoppingCost[item.id] || 0);
+    if (!cost) return;
+    const buyer = state.shoppingBuyer[item.id];
+    if (buyer) totals.set(buyer, (totals.get(buyer) || 0) + cost);
+    else unassigned += cost;
+  });
+  const rows = [...totals.entries()].map(([name, total]) => ({ name, total }));
+  rows.push({ name: 'Unassigned', total: unassigned });
+  return rows;
 }
 
 function addPerson() {
