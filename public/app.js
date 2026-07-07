@@ -9,11 +9,7 @@ const categories = [
 ];
 
 const mealOptions = {
-  breakfast: ['Eggs', 'Bacon', 'Sausage', 'Biscuits', 'Pancakes', 'French toast', 'Breakfast burritos', 'Fruit'],
-  lunch: ['Sandwiches', 'Hot dogs', 'Burgers', 'Chicken wraps', 'Quesadillas', 'Leftovers'],
-  dinner: ['Steaks', 'Chicken', 'Pulled pork', 'Tacos', 'Fajitas', 'Spaghetti', 'Pizza', 'Kabobs', 'Grilled shrimp', 'Smoked ribs', 'Restaurant'],
-  snacks: ['Chips and dip', 'Fruit', 'Trail mix', 'Veggie tray', 'Pretzels', 'Jerky'],
-  dessert: ['Smores', 'Brownies', 'Ice cream', 'Cookies', 'Banana pudding']
+  dinner: ['Steaks', 'Grilled chicken', 'Pulled pork sandwiches', 'Tacos', 'Fajitas', 'Spaghetti', 'Pizza night', 'Kabobs', 'Grilled shrimp', 'Smoked ribs', 'Burgers and hot dogs', 'Restaurant']
 };
 
 const mealGroceries = {
@@ -32,15 +28,16 @@ const mealGroceries = {
   Quesadillas: [['Dairy', 'Shredded cheese', '3 bags'], ['Bread', 'Tortillas', '3 packs'], ['Meat', 'Chicken', '4 lb']],
   Leftovers: [['Miscellaneous', 'Storage containers', '1 pack']],
   Steaks: [['Meat', 'Steaks', '12'], ['Produce', 'Baked potatoes', '12'], ['Produce', 'Salad kit', '3']],
-  Chicken: [['Meat', 'Chicken breasts', '8 lb'], ['Condiments', 'Marinade', '2 bottles']],
-  'Pulled pork': [['Meat', 'Pulled pork', '8 lb'], ['Bread', 'Slider buns', '3 packs'], ['Condiments', 'BBQ sauce', '2 bottles']],
+  'Grilled chicken': [['Meat', 'Chicken breasts', '8 lb'], ['Condiments', 'Marinade', '2 bottles']],
+  'Pulled pork sandwiches': [['Meat', 'Pulled pork', '8 lb'], ['Bread', 'Slider buns', '3 packs'], ['Condiments', 'BBQ sauce', '2 bottles']],
   Tacos: [['Meat', 'Ground beef', '6 lb'], ['Bread', 'Taco shells', '4 boxes'], ['Dairy', 'Shredded cheese', '3 bags'], ['Produce', 'Lettuce and tomatoes', '1 set']],
   Fajitas: [['Meat', 'Fajita meat', '7 lb'], ['Produce', 'Peppers and onions', '1 tray'], ['Bread', 'Tortillas', '3 packs']],
   Spaghetti: [['Dry Goods', 'Pasta', '4 boxes'], ['Dry Goods', 'Pasta sauce', '4 jars'], ['Meat', 'Italian sausage', '4 lb']],
-  Pizza: [['Frozen', 'Frozen pizzas', '8']],
+  'Pizza night': [['Frozen', 'Frozen pizzas', '8']],
   Kabobs: [['Meat', 'Kabob meat', '7 lb'], ['Produce', 'Kabob vegetables', '1 tray'], ['Miscellaneous', 'Skewers', '1 pack']],
   'Grilled shrimp': [['Meat', 'Shrimp', '6 lb'], ['Dairy', 'Butter', '1 lb'], ['Produce', 'Lemons', '8']],
   'Smoked ribs': [['Meat', 'Ribs', '8 racks'], ['Condiments', 'BBQ rub', '1 jar'], ['Condiments', 'BBQ sauce', '2 bottles']],
+  'Burgers and hot dogs': [['Meat', 'Burger patties', '24'], ['Meat', 'Hot dogs', '24'], ['Bread', 'Burger buns', '24'], ['Bread', 'Hot dog buns', '24'], ['Dairy', 'Cheese slices', '2 packs'], ['Produce', 'Lettuce and tomatoes', '1 set']],
   'Chips and dip': [['Snacks', 'Chips', '8 bags'], ['Dairy', 'Dip', '4 tubs']],
   'Trail mix': [['Snacks', 'Trail mix', '2 large bags']],
   'Veggie tray': [['Produce', 'Veggie tray', '2 large']],
@@ -52,6 +49,124 @@ const mealGroceries = {
   Cookies: [['Snacks', 'Cookies', '4 packs']],
   'Banana pudding': [['Produce', 'Bananas', '12'], ['Dairy', 'Milk', '1 gallon'], ['Dry Goods', 'Pudding mix', '4 boxes'], ['Snacks', 'Vanilla wafers', '2 boxes']]
 };
+
+const masterGrocerySeeds = [
+  ['Breakfast', 'Eggs', '4 dozen'],
+  ['Meat', 'Bacon', '4 packs'],
+  ['Meat', 'Breakfast sausage', '3 packs'],
+  ['Breakfast', 'Pancake mix', '2 boxes'],
+  ['Breakfast', 'Syrup', '2 bottles'],
+  ['Bread', 'Biscuits', '4 cans'],
+  ['Bread', 'Bagels', '2 packs'],
+  ['Dairy', 'Cream cheese', '2 tubs'],
+  ['Dairy', 'Butter', '2 lb'],
+  ['Dairy', 'Milk', '3 gallons'],
+  ['Dairy', 'Shredded cheese', '4 bags'],
+  ['Dairy', 'Cheese slices', '3 packs'],
+  ['Dairy', 'Sour cream', '2 tubs'],
+  ['Produce', 'Bananas', '18'],
+  ['Produce', 'Apples', '18'],
+  ['Produce', 'Watermelon', '2'],
+  ['Produce', 'Grapes', '4 lb'],
+  ['Produce', 'Lemons', '10'],
+  ['Produce', 'Limes', '12'],
+  ['Produce', 'Lettuce', '3 heads'],
+  ['Produce', 'Tomatoes', '10'],
+  ['Produce', 'Onions', '8'],
+  ['Produce', 'Bell peppers', '10'],
+  ['Produce', 'Potatoes', '15 lb'],
+  ['Produce', 'Corn on the cob', '24 ears'],
+  ['Produce', 'Salad kits', '5'],
+  ['Produce', 'Veggie tray', '2 large'],
+  ['Meat', 'Deli turkey and ham', '5 lb'],
+  ['Meat', 'Chicken breasts', '8 lb'],
+  ['Meat', 'Ground beef', '8 lb'],
+  ['Meat', 'Steaks', '12'],
+  ['Meat', 'Pulled pork', '8 lb'],
+  ['Meat', 'Shrimp', '6 lb'],
+  ['Meat', 'Ribs', '8 racks'],
+  ['Meat', 'Burger patties', '24'],
+  ['Meat', 'Hot dogs', '24'],
+  ['Bread', 'Sandwich bread', '4 loaves'],
+  ['Bread', 'Burger buns', '24'],
+  ['Bread', 'Hot dog buns', '24'],
+  ['Bread', 'Slider buns', '3 packs'],
+  ['Bread', 'Tortillas', '5 packs'],
+  ['Bread', 'Taco shells', '4 boxes'],
+  ['Dry Goods', 'Pasta', '5 boxes'],
+  ['Dry Goods', 'Pasta sauce', '5 jars'],
+  ['Dry Goods', 'Rice', '1 large bag'],
+  ['Dry Goods', 'Mac and cheese', '4 boxes'],
+  ['Dry Goods', 'Pudding mix', '4 boxes'],
+  ['Dry Goods', 'Brownie mix', '3 boxes'],
+  ['Frozen', 'Frozen pizzas', '8'],
+  ['Frozen', 'Ice cream', '4 tubs'],
+  ['Snacks', 'Chips', '10 bags'],
+  ['Snacks', 'Dip', '5 tubs'],
+  ['Snacks', 'Pretzels', '3 bags'],
+  ['Snacks', 'Trail mix', '3 large bags'],
+  ['Snacks', 'Beef jerky', '3 bags'],
+  ['Snacks', 'Crackers', '4 boxes'],
+  ['Snacks', 'Cookies', '5 packs'],
+  ['Snacks', 'Granola bars', '3 boxes'],
+  ['Snacks', 'Graham crackers', '4 boxes'],
+  ['Snacks', 'Marshmallows', '4 bags'],
+  ['Snacks', 'Chocolate bars', '30'],
+  ['Snacks', 'Vanilla wafers', '2 boxes'],
+  ['Condiments', 'Ketchup', '2 bottles'],
+  ['Condiments', 'Mustard', '2 bottles'],
+  ['Condiments', 'Mayo', '2 jars'],
+  ['Condiments', 'BBQ sauce', '4 bottles'],
+  ['Condiments', 'Marinade', '3 bottles'],
+  ['Condiments', 'Salsa', '3 jars'],
+  ['Condiments', 'Hot sauce', '1 bottle'],
+  ['Condiments', 'Ranch', '2 bottles'],
+  ['Condiments', 'Italian dressing', '2 bottles'],
+  ['Condiments', 'Taco seasoning', '8 packets'],
+  ['Condiments', 'BBQ rub', '1 jar'],
+  ['Condiments', 'Salt', '1'],
+  ['Condiments', 'Pepper', '1'],
+  ['Condiments', 'Seasonings', '1 set'],
+  ['Condiments', 'Cooking oil', '1 bottle'],
+  ['Condiments', 'Olive oil', '1 bottle'],
+  ['Condiments', 'Nonstick spray', '2 cans'],
+  ['Drinks', 'Bottled water', '6 cases'],
+  ['Drinks', 'Sports drinks', '4 cases'],
+  ['Drinks', 'Soft drinks', '5 cases'],
+  ['Drinks', 'Coffee', '2 bags'],
+  ['Drinks', 'Coffee creamer', '3 bottles'],
+  ['Drinks', 'Juice', '3 bottles'],
+  ['Alcohol', 'Beer', 'as needed'],
+  ['Alcohol', 'Liquor', 'as needed'],
+  ['Alcohol', 'Wine', 'as needed'],
+  ['Alcohol', 'Mixers', 'as needed'],
+  ['Alcohol', 'Limes', '12'],
+  ['Alcohol', 'Lemons', '10'],
+  ['Alcohol', 'Mint', '2 packs'],
+  ['Alcohol', 'Simple syrup', '1 bottle'],
+  ['Cabin', 'Ice', '12 bags'],
+  ['Paper Products', 'Paper plates', '2 large packs'],
+  ['Paper Products', 'Plastic utensils', '2 large packs'],
+  ['Paper Products', 'Napkins', '2 packs'],
+  ['Paper Products', 'Solo cups', '2 large packs'],
+  ['Paper Products', 'Paper towels', '3 large packs'],
+  ['Paper Products', 'Toilet paper', '2 large packs'],
+  ['Cleaning', 'Trash bags', '2 boxes'],
+  ['Cleaning', 'Dish soap', '1 bottle'],
+  ['Cleaning', 'Dishwasher pods', '1 tub'],
+  ['Cleaning', 'Laundry detergent', '1 bottle'],
+  ['Cleaning', 'Cleaning spray', '1 bottle'],
+  ['Cleaning', 'Sponges', '1 pack'],
+  ['Miscellaneous', 'Aluminum foil', '2 rolls'],
+  ['Miscellaneous', 'Plastic wrap', '1 roll'],
+  ['Miscellaneous', 'Ziplock bags', '2 boxes'],
+  ['Miscellaneous', 'Storage containers', '1 pack'],
+  ['Miscellaneous', 'Charcoal', '2 bags'],
+  ['Miscellaneous', 'Propane', '1 spare tank'],
+  ['Miscellaneous', 'Fire starters', '1 box'],
+  ['Miscellaneous', 'Lighter', '2'],
+  ['Miscellaneous', 'Matches', '1 box']
+];
 
 const checklistSeeds = {
   'Before Leaving Home': ['Buy groceries before arriving', 'Confirm cabin access', 'Pack chargers', 'Freeze ice packs', 'Check weather', 'Share planner link with family'],
@@ -89,11 +204,7 @@ function createDefaultState() {
     people: ['Tony', 'Amy', 'Kylee', 'Elleman'],
     owned: ['Charcoal', 'Seasonings', 'Fishing rods', 'Coolers', 'Life jackets', 'Paper towels', 'Coffee', 'Trash bags'],
     days: Object.fromEntries(days.map((day, index) => [day.id, {
-      breakfast: index === 0 ? '' : 'Eggs',
-      lunch: index === 6 ? 'Restaurant' : 'Sandwiches',
-      dinner: day.id === '2026-07-24' ? 'Restaurant' : ['Steaks', 'Tacos', 'Pulled pork', 'Chicken', 'Pizza', 'Fajitas', 'Restaurant', 'Kabobs', 'Smoked ribs'][index],
-      snacks: 'Chips and dip',
-      dessert: index % 2 ? 'Ice cream' : 'Smores',
+      dinner: day.id === '2026-07-24' ? 'Restaurant' : ['Steaks', 'Tacos', 'Pulled pork sandwiches', 'Grilled chicken', 'Pizza night', 'Fajitas', 'Restaurant', 'Kabobs', 'Smoked ribs'][index],
       activities: {
         boatTime: true,
         fishing: index % 2 === 0,
@@ -140,12 +251,26 @@ async function loadState() {
 }
 
 function mergeState(incoming) {
+  const base = createDefaultState();
+  const mergedDays = { ...base.days, ...(incoming.days || {}) };
   return {
-    ...createDefaultState(),
+    ...base,
     ...incoming,
-    days: { ...createDefaultState().days, ...(incoming.days || {}) },
-    checks: { ...createDefaultState().checks, ...(incoming.checks || {}) },
-    budget: { ...createDefaultState().budget, ...(incoming.budget || {}) }
+    days: Object.fromEntries(Object.entries(mergedDays).map(([id, plan]) => [id, normalizeDayPlan(plan)])),
+    checks: { ...base.checks, ...(incoming.checks || {}) },
+    budget: { ...base.budget, ...(incoming.budget || {}) }
+  };
+}
+
+function normalizeDayPlan(plan) {
+  const dinnerMap = {
+    Chicken: 'Grilled chicken',
+    'Pulled pork': 'Pulled pork sandwiches',
+    Pizza: 'Pizza night'
+  };
+  return {
+    ...plan,
+    dinner: dinnerMap[plan.dinner] || plan.dinner || ''
   };
 }
 
@@ -277,7 +402,7 @@ function renderMetrics() {
   const unchecked = getUncheckedCount();
   const mealsRemaining = days.reduce((sum, day) => {
     const plan = state.days[day.id];
-    return sum + ['breakfast', 'lunch', 'dinner'].filter(key => !plan[key]).length;
+    return sum + (plan.dinner ? 0 : 1);
   }, 0);
   const groceryEstimate = getShoppingItems().filter(item => item.category !== 'Alcohol').length * 8;
   const alcoholEstimate = getShoppingItems().filter(item => item.category === 'Alcohol').length * 18 + 450;
@@ -287,7 +412,7 @@ function renderMetrics() {
   const metrics = [
     ['Countdown', `${diff}`, 'days until Norris Lake'],
     ['People', state.people.length, 'family travelers'],
-    ['Meals Open', mealsRemaining, 'breakfast/lunch/dinner slots'],
+    ['Dinners Open', mealsRemaining, 'dinner slots to pick'],
     ['Unchecked', unchecked, 'master tasks remaining'],
     ['Grocery Est.', money(groceryEstimate), 'auto list estimate'],
     ['Alcohol Est.', money(alcoholEstimate), 'drinks and supplies'],
@@ -507,11 +632,7 @@ function renderDays() {
         <h3>${day.label}</h3>
         ${nightOut}
         <div class="mini-grid">
-          ${mealField(day.id, 'breakfast', 'Breakfast')}
-          ${mealField(day.id, 'lunch', 'Lunch')}
           ${mealField(day.id, 'dinner', 'Dinner')}
-          ${mealField(day.id, 'snacks', 'Snacks')}
-          ${mealField(day.id, 'dessert', 'Dessert')}
         </div>
         <div class="activity-row">
           ${activityField(day.id, 'boatTime', 'Boat')}
@@ -569,6 +690,7 @@ function updateDayField(event) {
   }
   scheduleSave();
   renderMetrics();
+  renderDays();
   renderMeals();
   renderShopping();
 }
@@ -577,16 +699,17 @@ function renderMeals() {
   document.getElementById('mealBoard').innerHTML = days.map(day => {
     const plan = state.days[day.id];
     return `
-      <article class="meal-day searchable" data-search="${day.label} ${plan.breakfast} ${plan.lunch} ${plan.dinner} ${plan.snacks} ${plan.dessert}">
+      <article class="meal-day searchable" data-search="${day.label} ${plan.dinner}">
         <h3>${day.label}</h3>
         <div class="meal-selects">
-          ${['breakfast', 'lunch', 'dinner', 'snacks', 'dessert'].map(key => `
-            <div><span class="label">${title(key)}</span><strong>${escapeHtml(plan[key] || 'Unplanned')}</strong></div>
-          `).join('')}
+          ${mealField(day.id, 'dinner', 'Dinner')}
         </div>
       </article>
     `;
   }).join('');
+  document.querySelectorAll('#mealBoard [data-day][data-field]').forEach(input => {
+    input.addEventListener('change', updateDayField);
+  });
 }
 
 function renderShopping() {
@@ -647,13 +770,11 @@ function getShoppingItems() {
     if (!map.has(key)) map.set(key, { id: key, category, name, qty, custom });
   };
 
-  Object.values(state.days).forEach(plan => {
-    ['breakfast', 'lunch', 'dinner', 'snacks', 'dessert'].forEach(key => {
-      (mealGroceries[plan[key]] || []).forEach(([category, name, qty]) => add(category, name, qty));
-    });
-  });
+  masterGrocerySeeds.forEach(([category, name, qty]) => add(category, name, qty));
 
-  checklistSeeds.Alcohol.forEach(item => add(item.match(/Beer|Liquor|Wine|Mixers|Coolers|Limes|Lemons|Mint|Simple/) ? 'Alcohol' : 'Drinks', item, ''));
+  Object.values(state.days).forEach(plan => {
+    (mealGroceries[plan.dinner] || []).forEach(([category, name, qty]) => add(category, name, qty));
+  });
   state.customShopping.forEach(item => add(item.category, item.name, item.qty, true, item.id));
   return [...map.values()].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 }
