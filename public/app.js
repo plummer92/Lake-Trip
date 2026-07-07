@@ -638,12 +638,10 @@ function renderDays() {
     const plan = state.days[day.id];
     const nightOut = day.id === '2026-07-24' ? '<span class="pill">Knoxville Night Out</span>' : '';
     return `
-      <article class="day-card searchable" data-search="${day.label} ${Object.values(plan).join(' ')}">
+      <article class="day-card searchable" data-search="${day.label} ${plan.dinner} ${plan.notes || ''}">
         <h3>${day.label}</h3>
         ${nightOut}
-        <div class="mini-grid">
-          ${mealField(day.id, 'dinner', 'Dinner')}
-        </div>
+        ${dinnerDecision(plan.dinner)}
         <div class="activity-row">
           ${activityField(day.id, 'boatTime', 'Boat')}
           ${activityField(day.id, 'fishing', 'Fishing')}
@@ -666,6 +664,15 @@ function renderDays() {
       if (event.target.tagName === 'TEXTAREA') updateDayField(event);
     });
   });
+}
+
+function dinnerDecision(dinner) {
+  return `
+    <div class="dinner-decision">
+      <span class="label">Decided Dinner</span>
+      <strong>${escapeHtml(dinner || 'TBD')}</strong>
+    </div>
+  `;
 }
 
 function mealField(dayId, key, label) {

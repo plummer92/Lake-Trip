@@ -449,6 +449,31 @@ body.dark .check-card h3 {
   gap: 9px;
 }
 
+.dinner-decision {
+  margin: 10px 0 12px;
+  padding: 13px 14px;
+  border: 1px solid rgba(242, 184, 75, 0.54);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(242, 184, 75, 0.18), rgba(255, 255, 255, 0.58)),
+    repeating-linear-gradient(90deg, rgba(154, 104, 63, 0.08) 0 10px, transparent 10px 20px);
+}
+
+.dinner-decision strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--lake-850);
+  font-size: 1.12rem;
+}
+
+body.dark .dinner-decision {
+  background: rgba(242, 184, 75, 0.12);
+}
+
+body.dark .dinner-decision strong {
+  color: white;
+}
+
 .field {
   display: grid;
   gap: 5px;
