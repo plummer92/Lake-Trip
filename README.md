@@ -2,6 +2,8 @@
 
 A responsive family lake-trip command center for Norris Lake, Flat Hollow Marina, and Take-5 Cabin.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/plummer92/Lake-Trip)
+
 ## Run Locally
 
 ```powershell
