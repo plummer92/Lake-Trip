@@ -1,6 +1,6 @@
 const TRIP_ID = 'take-5-cabin-2026';
 const LOCAL_KEY = `planner:${TRIP_ID}`;
-const pageIds = ['dashboard', 'weather', 'daily', 'meals', 'shopping', 'packing', 'budget'];
+const pageIds = ['dashboard', 'weather', 'norris-faq', 'flat-hollow-faq', 'daily', 'meals', 'shopping', 'packing', 'budget'];
 
 const categories = [
   'Produce', 'Dairy', 'Meat', 'Frozen', 'Dry Goods', 'Snacks', 'Condiments',
