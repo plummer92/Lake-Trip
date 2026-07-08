@@ -1246,6 +1246,9 @@ body.dark .budget-table {
 .need-list {
   display: grid;
   gap: 8px;
+  max-height: 62vh;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .need-list .shopping-row {

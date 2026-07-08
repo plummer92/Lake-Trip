@@ -1248,8 +1248,9 @@ function wheelGradient(entries) {
 }
 
 function renderShopping() {
-  const grouped = groupBy(getShoppingItems(), 'category');
-  renderThingsNeeded();
+  const shoppingItems = getShoppingItems();
+  const grouped = groupBy(shoppingItems, 'category');
+  renderThingsNeeded(shoppingItems);
   document.getElementById('shoppingLists').innerHTML = categories
     .filter(category => grouped[category]?.length)
     .map(category => `
@@ -1264,17 +1265,22 @@ function renderShopping() {
       state.shoppingChecks[input.dataset.shoppingCheck] = input.checked;
       scheduleSave();
       renderMetrics();
+      renderShopping();
+      renderBudgetSummary();
+      lucide.createIcons();
     });
   });
   document.querySelectorAll('[data-shopping-qty]').forEach(input => {
     input.addEventListener('input', () => {
       state.shoppingQty[input.dataset.shoppingQty] = input.value;
+      syncShoppingControls('shoppingQty', input.dataset.shoppingQty, input.value, input);
       scheduleSave();
     });
   });
   document.querySelectorAll('[data-shopping-buyer]').forEach(select => {
     select.addEventListener('change', () => {
       state.shoppingBuyer[select.dataset.shoppingBuyer] = select.value;
+      syncShoppingControls('shoppingBuyer', select.dataset.shoppingBuyer, select.value, select);
       scheduleSave();
       renderBudgetSummary();
     });
@@ -1282,6 +1288,7 @@ function renderShopping() {
   document.querySelectorAll('[data-shopping-cost]').forEach(input => {
     input.addEventListener('input', () => {
       state.shoppingCost[input.dataset.shoppingCost] = input.value;
+      syncShoppingControls('shoppingCost', input.dataset.shoppingCost, input.value, input);
       scheduleSave();
       renderBudgetSummary();
       renderMetrics();
@@ -1296,14 +1303,14 @@ function renderShopping() {
   });
 }
 
-function renderThingsNeeded() {
+function renderThingsNeeded(shoppingItems = getShoppingItems()) {
   const node = document.getElementById('thingsNeededList');
   if (!node) return;
-  const items = normalizeNeededItems(state.thingsNeeded);
-  state.thingsNeeded = items;
+  state.thingsNeeded = normalizeNeededItems(state.thingsNeeded);
+  const items = getOutstandingNeededItems(shoppingItems);
   node.innerHTML = items.length
     ? items.map(item => shoppingRow({ ...item, need: true })).join('')
-    : '<p class="empty-note">Add one-off trip needs here so they do not get buried in the grocery list.</p>';
+    : '<p class="empty-note">Everything entered here or checked off in groceries is handled.</p>';
 
   document.querySelectorAll('[data-remove-needed]').forEach(button => {
     button.addEventListener('click', () => {
@@ -1318,6 +1325,29 @@ function renderThingsNeeded() {
   });
 }
 
+function getOutstandingNeededItems(shoppingItems = getShoppingItems()) {
+  const manualNeeds = normalizeNeededItems(state.thingsNeeded)
+    .filter(item => !state.shoppingChecks[item.id])
+    .map(item => ({ ...item, manualNeed: true }));
+  const openShopping = shoppingItems
+    .filter(item => !state.shoppingChecks[item.id])
+    .map(item => ({ ...item, manualNeed: false }));
+  const seen = new Set();
+  return [...manualNeeds, ...openShopping].filter(item => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function syncShoppingControls(field, id, value, source) {
+  const selector = `[data-${field.replace(/[A-Z]/g, char => `-${char.toLowerCase()}`)}]`;
+  document.querySelectorAll(selector).forEach(control => {
+    if (control === source || control.dataset[field] !== id) return;
+    control.value = value;
+  });
+}
+
 function shoppingRow(item) {
   const checked = state.shoppingChecks[item.id] ? 'checked' : '';
   const done = state.shoppingChecks[item.id] ? 'done' : '';
@@ -1325,7 +1355,7 @@ function shoppingRow(item) {
   const buyer = state.shoppingBuyer[item.id] || '';
   const cost = state.shoppingCost[item.id] || '';
   const itemMeta = item.need ? `<span class="category-chip">${escapeHtml(item.category)}</span>` : '';
-  const removeButton = item.need
+  const removeButton = item.manualNeed
     ? `<button data-remove-needed="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>`
     : item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : '';
   return `
