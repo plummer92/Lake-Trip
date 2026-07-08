@@ -28,7 +28,14 @@ if (databaseUrl) {
 }
 
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  setHeaders(res, filePath) {
+    if (/\.(?:html|js|css)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
+}));
 
 async function ensureDb() {
   if (!pool || dbReady) return Boolean(pool);
@@ -171,6 +178,7 @@ app.put('/api/state/:tripId', async (req, res) => {
 });
 
 app.get('*', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

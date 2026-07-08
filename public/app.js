@@ -461,6 +461,7 @@ function bindEvents() {
     }
   });
   document.getElementById('saveNow').addEventListener('click', () => saveState(true));
+  document.getElementById('refreshShared').addEventListener('click', refreshSharedState);
   document.getElementById('refreshWeather').addEventListener('click', () => refreshWeather(true));
   document.getElementById('printPlanner').addEventListener('click', () => window.print());
   document.getElementById('toggleDark').addEventListener('click', () => {
@@ -515,11 +516,20 @@ function startSharedSync() {
   syncPollTimer = setInterval(() => pullRemoteState(false), SYNC_POLL_MS);
 }
 
-async function pullRemoteState(showToast = false) {
-  if (!remoteSyncAvailable || saveInFlight || hasPendingLocalChanges()) return;
+async function refreshSharedState() {
+  if (!remoteSyncAvailable) {
+    toast('Shared sync is not connected right now.');
+    return;
+  }
+  if (hasPendingLocalChanges()) await saveState(false);
+  await pullRemoteState(true, true);
+}
+
+async function pullRemoteState(showToast = false, force = false) {
+  if (!remoteSyncAvailable || saveInFlight || (!force && hasPendingLocalChanges())) return;
   try {
     const remote = await fetchRemoteState();
-    if (!remote.data || !isRemoteNewer(remote)) {
+    if (!remote.data || (!force && !isRemoteNewer(remote))) {
       setSyncStatus('Neon shared sync');
       return;
     }
