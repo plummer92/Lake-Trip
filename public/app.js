@@ -1251,6 +1251,7 @@ function renderShopping() {
   const shoppingItems = getShoppingItems();
   const grouped = groupBy(shoppingItems, 'category');
   renderThingsNeeded(shoppingItems);
+  renderOwned(shoppingItems);
   document.getElementById('shoppingLists').innerHTML = categories
     .filter(category => grouped[category]?.length)
     .map(category => `
@@ -1325,6 +1326,75 @@ function renderThingsNeeded(shoppingItems = getShoppingItems()) {
   });
 }
 
+function renderHaveList(shoppingItems = getShoppingItems()) {
+  const node = document.getElementById('ownedList');
+  if (!node) return;
+  const items = getHaveItems(shoppingItems);
+  node.innerHTML = items.length
+    ? items.map(item => item.fromChecklist ? haveRow(item) : manualOwnedPill(item.name)).join('')
+    : '<p class="empty-note">Checked-off grocery items will show here.</p>';
+
+  document.querySelectorAll('[data-uncheck-have]').forEach(button => {
+    button.addEventListener('click', () => {
+      delete state.shoppingChecks[button.dataset.uncheckHave];
+      scheduleSave();
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-remove-owned]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.owned = state.owned.filter(item => item !== button.dataset.removeOwned);
+      scheduleSave();
+      render();
+    });
+  });
+}
+
+function getHaveItems(shoppingItems = getShoppingItems()) {
+  const checked = getPurchasingItems(shoppingItems)
+    .filter(item => state.shoppingChecks[item.id])
+    .map(item => ({ ...item, fromChecklist: true }));
+  const manualOwned = state.owned.map(name => ({
+    id: `owned:${normalize(name)}`,
+    name,
+    category: 'Already have',
+    fromChecklist: false
+  }));
+  const seen = new Set();
+  return [...checked, ...manualOwned].filter(item => {
+    const key = item.fromChecklist ? item.id : normalize(item.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function haveRow(item) {
+  const qty = state.shoppingQty[item.id] || item.qty || '';
+  const buyer = state.shoppingBuyer[item.id] || '';
+  const cost = state.shoppingCost[item.id] || '';
+  const details = [item.category, qty, buyer, cost ? money(Number(cost)) : ''].filter(Boolean).join(' | ');
+  return `
+    <div class="have-row searchable" data-search="${escapeHtml(item.name)} ${escapeHtml(details)}">
+      <div>
+        <strong>${escapeHtml(item.name)}</strong>
+        <span>${escapeHtml(details || 'Checked off')}</span>
+      </div>
+      <button type="button" data-uncheck-have="${item.id}" aria-label="Move ${escapeHtml(item.name)} back to Things We Need"><i data-lucide="rotate-ccw"></i></button>
+    </div>
+  `;
+}
+
+function manualOwnedPill(item) {
+  return `
+    <span class="pill searchable" data-search="${escapeHtml(item)}">
+      ${escapeHtml(item)}
+      <button aria-label="Remove ${escapeHtml(item)}" data-remove-owned="${escapeHtml(item)}"><i data-lucide="x"></i></button>
+    </span>
+  `;
+}
+
 function getOutstandingNeededItems(shoppingItems = getShoppingItems()) {
   const manualNeeds = normalizeNeededItems(state.thingsNeeded)
     .filter(item => !state.shoppingChecks[item.id])
@@ -1395,19 +1465,7 @@ function getShoppingItems() {
 }
 
 function renderOwned() {
-  document.getElementById('ownedList').innerHTML = state.owned.map(item => `
-    <span class="pill searchable" data-search="${item}">
-      ${escapeHtml(item)}
-      <button aria-label="Remove ${escapeHtml(item)}" data-remove-owned="${escapeHtml(item)}"><i data-lucide="x"></i></button>
-    </span>
-  `).join('');
-  document.querySelectorAll('[data-remove-owned]').forEach(button => {
-    button.addEventListener('click', () => {
-      state.owned = state.owned.filter(item => item !== button.dataset.removeOwned);
-      scheduleSave();
-      render();
-    });
-  });
+  renderHaveList();
 }
 
 function renderChecklists() {
@@ -1498,8 +1556,8 @@ function getBuyerTotals() {
   return rows;
 }
 
-function getPurchasingItems() {
-  return [...getShoppingItems(), ...normalizeNeededItems(state.thingsNeeded)];
+function getPurchasingItems(shoppingItems = getShoppingItems()) {
+  return [...shoppingItems, ...normalizeNeededItems(state.thingsNeeded)];
 }
 
 function addPerson() {

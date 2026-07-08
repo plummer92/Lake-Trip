@@ -1259,6 +1259,48 @@ body.dark .need-list .shopping-row {
   background: rgba(255, 255, 255, 0.07);
 }
 
+.have-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+body.dark .have-row {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.have-row div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.have-row strong,
+.have-row span {
+  overflow-wrap: anywhere;
+}
+
+.have-row span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.have-row button {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--lake-850);
+}
+
 .empty-note {
   margin: 0;
   color: var(--muted);
