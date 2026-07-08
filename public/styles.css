@@ -1221,6 +1221,47 @@ body.dark .budget-table {
   overflow-wrap: anywhere;
 }
 
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin-left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(242, 184, 75, 0.18);
+  color: var(--wood);
+  font-size: 0.72rem;
+  font-weight: 900;
+  vertical-align: middle;
+}
+
+.need-panel-section {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.need-list {
+  display: grid;
+  gap: 8px;
+}
+
+.need-list .shopping-row {
+  background: rgba(232, 242, 241, 0.68);
+}
+
+body.dark .need-list .shopping-row {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.empty-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .shopping-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

@@ -265,15 +265,22 @@
         </div>
         <div class="toolbar">
           <div class="inline-form grow">
-            <input id="customItemName" type="text" placeholder="Add custom shopping item">
+            <input id="customItemName" type="text" placeholder="Add thing we need">
             <select id="customItemCategory"></select>
             <input id="customItemQty" type="text" placeholder="Qty">
-            <button class="button" id="addShoppingItem"><i data-lucide="plus"></i> Add</button>
+            <button class="button" id="addShoppingItem"><i data-lucide="plus"></i> Add Need</button>
           </div>
         </div>
         <div class="shopping-layout">
           <div class="list-columns" id="shoppingLists"></div>
           <aside class="side-panel">
+            <div class="need-panel-section">
+              <div class="section-heading compact">
+                <p class="eyebrow">One-off items</p>
+                <h2>Things We Need</h2>
+              </div>
+              <div class="need-list" id="thingsNeededList"></div>
+            </div>
             <div class="section-heading compact">
               <p class="eyebrow">Already have</p>
               <h2>Inventory</h2>

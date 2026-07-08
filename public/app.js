@@ -254,6 +254,7 @@ function createDefaultState() {
     checks: Object.fromEntries(Object.entries(checklistSeeds).flatMap(([section, items]) => items.map(item => [`${section}:${item}`, false]))),
     mealIdeas: [...defaultDinnerIdeas],
     customShopping: [],
+    thingsNeeded: [],
     shoppingChecks: {},
     shoppingQty: {},
     shoppingBuyer: {},
@@ -303,12 +304,17 @@ function mergeState(incoming) {
   const base = createDefaultState();
   const mergedDays = { ...base.days, ...(incoming.days || {}) };
   const incomingMealIdeas = Array.isArray(incoming.mealIdeas) ? incoming.mealIdeas : base.mealIdeas;
+  const incomingNeeds = Array.isArray(incoming.thingsNeeded)
+    ? incoming.thingsNeeded
+    : Array.isArray(incoming.customShopping) ? incoming.customShopping : base.thingsNeeded;
   return {
     ...base,
     ...incoming,
     days: Object.fromEntries(Object.entries(mergedDays).map(([id, plan]) => [id, normalizeDayPlan(plan)])),
     mealIdeas: normalizeMealIdeas([...incomingMealIdeas, ...Object.values(mergedDays).map(plan => plan?.dinner)]),
     checks: { ...base.checks, ...(incoming.checks || {}) },
+    customShopping: [],
+    thingsNeeded: normalizeNeededItems(incomingNeeds),
     shoppingChecks: { ...(incoming.shoppingChecks || {}) },
     shoppingQty: { ...(incoming.shoppingQty || {}) },
     shoppingBuyer: { ...(incoming.shoppingBuyer || {}) },
@@ -326,7 +332,8 @@ function mergeFamilyState(remote, local, base) {
   merged.people = mergeSharedTextList(merged.people, local.people, original.people);
   merged.owned = mergeSharedTextList(merged.owned, local.owned, original.owned);
   merged.mealIdeas = normalizeMealIdeas(mergeSharedTextList(merged.mealIdeas, local.mealIdeas, original.mealIdeas));
-  merged.customShopping = mergeCustomShopping(merged.customShopping, local.customShopping, original.customShopping);
+  merged.customShopping = [];
+  merged.thingsNeeded = mergeNeededItems(merged.thingsNeeded, local.thingsNeeded, original.thingsNeeded);
   merged.days = mergeObjectEdits(merged.days, local.days, original.days);
   merged.checks = mergeObjectEdits(merged.checks, local.checks, original.checks);
   merged.shoppingChecks = mergeObjectEdits(merged.shoppingChecks, local.shoppingChecks, original.shoppingChecks);
@@ -362,19 +369,41 @@ function sameTextList(left = [], right = []) {
   return deepEqual(left.map(normalize), right.map(normalize));
 }
 
-function mergeCustomShopping(remoteList = [], localList = [], baseList = []) {
-  const remoteChanged = !deepEqual(remoteList, baseList);
-  const localChanged = !deepEqual(localList, baseList);
-  if (localChanged && !remoteChanged) return cloneState(localList);
-  if (!localChanged) return cloneState(remoteList);
+function mergeNeededItems(remoteList = [], localList = [], baseList = []) {
+  const remoteItems = normalizeNeededItems(remoteList);
+  const localItems = normalizeNeededItems(localList);
+  const baseItems = normalizeNeededItems(baseList);
+  const remoteChanged = !deepEqual(remoteItems, baseItems);
+  const localChanged = !deepEqual(localItems, baseItems);
+  if (localChanged && !remoteChanged) return cloneState(localItems);
+  if (!localChanged) return cloneState(remoteItems);
 
-  const baseById = new Map(baseList.map(item => [item.id, item]));
-  const byId = new Map(remoteList.map(item => [item.id, cloneState(item)]));
-  localList.forEach(item => {
+  const baseById = new Map(baseItems.map(item => [item.id, item]));
+  const byId = new Map(remoteItems.map(item => [item.id, cloneState(item)]));
+  localItems.forEach(item => {
     const baseItem = baseById.get(item.id);
     if (!baseItem || !deepEqual(item, baseItem)) byId.set(item.id, cloneState(item));
   });
   return [...byId.values()];
+}
+
+function normalizeNeededItems(items = []) {
+  const seen = new Set();
+  return items.reduce((list, item) => {
+    const name = String(item?.name || '').trim();
+    if (!name) return list;
+    const category = categories.includes(item?.category) ? item.category : 'Miscellaneous';
+    const id = item?.id || `need:${category}:${normalize(name)}`;
+    if (seen.has(id)) return list;
+    seen.add(id);
+    list.push({
+      id,
+      name,
+      category,
+      qty: String(item?.qty || '').trim()
+    });
+    return list;
+  }, []);
 }
 
 function mergeWheelHistory(remoteList = [], localList = []) {
@@ -1220,6 +1249,7 @@ function wheelGradient(entries) {
 
 function renderShopping() {
   const grouped = groupBy(getShoppingItems(), 'category');
+  renderThingsNeeded();
   document.getElementById('shoppingLists').innerHTML = categories
     .filter(category => grouped[category]?.length)
     .map(category => `
@@ -1266,17 +1296,43 @@ function renderShopping() {
   });
 }
 
+function renderThingsNeeded() {
+  const node = document.getElementById('thingsNeededList');
+  if (!node) return;
+  const items = normalizeNeededItems(state.thingsNeeded);
+  state.thingsNeeded = items;
+  node.innerHTML = items.length
+    ? items.map(item => shoppingRow({ ...item, need: true })).join('')
+    : '<p class="empty-note">Add one-off trip needs here so they do not get buried in the grocery list.</p>';
+
+  document.querySelectorAll('[data-remove-needed]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.thingsNeeded = state.thingsNeeded.filter(item => item.id !== button.dataset.removeNeeded);
+      delete state.shoppingChecks[button.dataset.removeNeeded];
+      delete state.shoppingQty[button.dataset.removeNeeded];
+      delete state.shoppingBuyer[button.dataset.removeNeeded];
+      delete state.shoppingCost[button.dataset.removeNeeded];
+      scheduleSave();
+      render();
+    });
+  });
+}
+
 function shoppingRow(item) {
   const checked = state.shoppingChecks[item.id] ? 'checked' : '';
   const done = state.shoppingChecks[item.id] ? 'done' : '';
   const qty = state.shoppingQty[item.id] || item.qty || '';
   const buyer = state.shoppingBuyer[item.id] || '';
   const cost = state.shoppingCost[item.id] || '';
+  const itemMeta = item.need ? `<span class="category-chip">${escapeHtml(item.category)}</span>` : '';
+  const removeButton = item.need
+    ? `<button data-remove-needed="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>`
+    : item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : '';
   return `
     <div class="check-row shopping-row ${done}">
       <label class="item-main">
         <input type="checkbox" data-shopping-check="${item.id}" ${checked}>
-        <span>${escapeHtml(item.name)}</span>
+        <span>${escapeHtml(item.name)}${itemMeta}</span>
       </label>
       <div class="shopping-controls">
         <input class="qty" data-shopping-qty="${item.id}" value="${escapeHtml(qty)}" placeholder="Qty" aria-label="${escapeHtml(item.name)} quantity">
@@ -1285,7 +1341,7 @@ function shoppingRow(item) {
           <option value="">Buyer</option>
           ${state.people.map(person => `<option value="${escapeHtml(person)}" ${person === buyer ? 'selected' : ''}>${escapeHtml(person)}</option>`).join('')}
         </select>
-        ${item.custom ? `<button data-remove-custom="${item.id}" aria-label="Remove ${escapeHtml(item.name)}"><i data-lucide="trash-2"></i></button>` : ''}
+        ${removeButton}
       </div>
     </div>
   `;
@@ -1305,7 +1361,6 @@ function getShoppingItems() {
   Object.values(state.days).forEach(plan => {
     (mealGroceries[plan.dinner] || []).forEach(([category, name, qty]) => add(category, name, qty));
   });
-  state.customShopping.forEach(item => add(item.category, item.name, item.qty, true, item.id));
   return [...map.values()].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 }
 
@@ -1401,7 +1456,7 @@ function renderBudgetSummary() {
 function getBuyerTotals() {
   const totals = new Map(state.people.map(person => [person, 0]));
   let unassigned = 0;
-  getShoppingItems().forEach(item => {
+  getPurchasingItems().forEach(item => {
     const cost = Number(state.shoppingCost[item.id] || 0);
     if (!cost) return;
     const buyer = state.shoppingBuyer[item.id];
@@ -1411,6 +1466,10 @@ function getBuyerTotals() {
   const rows = [...totals.entries()].map(([name, total]) => ({ name, total }));
   rows.push({ name: 'Unassigned', total: unassigned });
   return rows;
+}
+
+function getPurchasingItems() {
+  return [...getShoppingItems(), ...normalizeNeededItems(state.thingsNeeded)];
 }
 
 function addPerson() {
@@ -1438,7 +1497,7 @@ function addCustomShopping() {
   const category = document.getElementById('customItemCategory').value;
   const qty = document.getElementById('customItemQty').value.trim();
   if (!name) return;
-  state.customShopping.push({ id: `custom:${Date.now()}`, name, category, qty, custom: true });
+  state.thingsNeeded.push({ id: `need:${Date.now()}`, name, category, qty });
   document.getElementById('customItemName').value = '';
   document.getElementById('customItemQty').value = '';
   scheduleSave();
@@ -1482,7 +1541,8 @@ function applySearch() {
 function getUncheckedCount() {
   const checklistUnchecked = Object.keys(state.checks).filter(key => !state.checks[key]).length;
   const shoppingUnchecked = getShoppingItems().filter(item => !state.shoppingChecks[item.id]).length;
-  return checklistUnchecked + shoppingUnchecked;
+  const needsUnchecked = normalizeNeededItems(state.thingsNeeded).filter(item => !state.shoppingChecks[item.id]).length;
+  return checklistUnchecked + shoppingUnchecked + needsUnchecked;
 }
 
 function maybeCelebrate() {
