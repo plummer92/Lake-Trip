@@ -1,5 +1,6 @@
 const TRIP_ID = 'take-5-cabin-2026';
 const LOCAL_KEY = `planner:${TRIP_ID}`;
+const SYNC_POLL_MS = 4000;
 const pageIds = ['dashboard', 'weather', 'norris-faq', 'flat-hollow-faq', 'daily', 'meals', 'shopping', 'wheel', 'packing', 'budget'];
 
 const categories = [
@@ -217,6 +218,15 @@ const days = Array.from({ length: 9 }, (_, index) => {
 let state = createDefaultState();
 let syncMode = 'localStorage';
 let saveTimer = null;
+let syncPollTimer = null;
+let remoteSyncAvailable = false;
+let lastRemoteUpdatedAt = null;
+let lastSyncedState = null;
+let localVersion = 0;
+let savedVersion = 0;
+let saveInFlight = false;
+let pendingSaveAfterInFlight = false;
+let remoteRenderPending = false;
 let weatherData = null;
 let weatherError = null;
 let selectedMealIdea = '';
@@ -260,22 +270,32 @@ async function init() {
   await loadState();
   render();
   refreshWeather();
+  startSharedSync();
 }
 
 async function loadState() {
   const local = localStorage.getItem(LOCAL_KEY);
   if (local) state = mergeState(JSON.parse(local));
+  lastSyncedState = cloneState(state);
 
   try {
     const health = await fetch('/api/health').then(response => response.json());
-    syncMode = health.mode === 'neon' ? 'Neon shared sync' : 'This browser only';
-    if (health.mode === 'neon') {
-      const remote = await fetch(`/api/state/${TRIP_ID}`).then(response => response.json());
-      if (remote.data) state = mergeState(remote.data);
-      await saveState(false);
+    remoteSyncAvailable = health.mode === 'neon';
+    setSyncStatus(remoteSyncAvailable ? 'Neon shared sync' : 'This browser only');
+    if (remoteSyncAvailable) {
+      const remote = await fetchRemoteState();
+      if (remote.data) {
+        state = mergeState(remote.data);
+        lastRemoteUpdatedAt = getRemoteUpdatedAt(remote);
+        lastSyncedState = cloneState(state);
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+      } else {
+        await saveState(false);
+      }
     }
   } catch {
-    syncMode = 'This browser only';
+    remoteSyncAvailable = false;
+    setSyncStatus('This browser only');
   }
 }
 
@@ -296,6 +316,110 @@ function mergeState(incoming) {
     budget: { ...base.budget, ...(incoming.budget || {}) },
     wheelHistory: Array.isArray(incoming.wheelHistory) ? incoming.wheelHistory.slice(0, 8) : []
   };
+}
+
+function mergeFamilyState(remote, local, base) {
+  const merged = mergeState(remote || {});
+  const original = base || createDefaultState();
+
+  if (!deepEqual(local.dark, original.dark)) merged.dark = local.dark;
+  merged.people = mergeSharedTextList(merged.people, local.people, original.people);
+  merged.owned = mergeSharedTextList(merged.owned, local.owned, original.owned);
+  merged.mealIdeas = normalizeMealIdeas(mergeSharedTextList(merged.mealIdeas, local.mealIdeas, original.mealIdeas));
+  merged.customShopping = mergeCustomShopping(merged.customShopping, local.customShopping, original.customShopping);
+  merged.days = mergeObjectEdits(merged.days, local.days, original.days);
+  merged.checks = mergeObjectEdits(merged.checks, local.checks, original.checks);
+  merged.shoppingChecks = mergeObjectEdits(merged.shoppingChecks, local.shoppingChecks, original.shoppingChecks);
+  merged.shoppingQty = mergeObjectEdits(merged.shoppingQty, local.shoppingQty, original.shoppingQty);
+  merged.shoppingBuyer = mergeObjectEdits(merged.shoppingBuyer, local.shoppingBuyer, original.shoppingBuyer);
+  merged.shoppingCost = mergeObjectEdits(merged.shoppingCost, local.shoppingCost, original.shoppingCost);
+  merged.budget = mergeObjectEdits(merged.budget, local.budget, original.budget);
+  merged.wheelHistory = mergeWheelHistory(merged.wheelHistory, local.wheelHistory);
+
+  return mergeState(merged);
+}
+
+function mergeSharedTextList(remoteList = [], localList = [], baseList = []) {
+  const remoteChanged = !sameTextList(remoteList, baseList);
+  const localChanged = !sameTextList(localList, baseList);
+  if (localChanged && !remoteChanged) return [...localList];
+  if (!localChanged) return [...remoteList];
+
+  const baseKeys = new Set(baseList.map(normalize));
+  const remoteKeys = new Set(remoteList.map(normalize));
+  const merged = [...remoteList];
+  localList.forEach(item => {
+    const key = normalize(item);
+    if (!remoteKeys.has(key) && !baseKeys.has(key)) {
+      remoteKeys.add(key);
+      merged.push(item);
+    }
+  });
+  return merged;
+}
+
+function sameTextList(left = [], right = []) {
+  return deepEqual(left.map(normalize), right.map(normalize));
+}
+
+function mergeCustomShopping(remoteList = [], localList = [], baseList = []) {
+  const remoteChanged = !deepEqual(remoteList, baseList);
+  const localChanged = !deepEqual(localList, baseList);
+  if (localChanged && !remoteChanged) return cloneState(localList);
+  if (!localChanged) return cloneState(remoteList);
+
+  const baseById = new Map(baseList.map(item => [item.id, item]));
+  const byId = new Map(remoteList.map(item => [item.id, cloneState(item)]));
+  localList.forEach(item => {
+    const baseItem = baseById.get(item.id);
+    if (!baseItem || !deepEqual(item, baseItem)) byId.set(item.id, cloneState(item));
+  });
+  return [...byId.values()];
+}
+
+function mergeWheelHistory(remoteList = [], localList = []) {
+  const seen = new Set();
+  return [...localList, ...remoteList].filter(item => {
+    const key = `${item?.pickedAt || ''}:${item?.category || ''}:${item?.title || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return item?.title;
+  }).slice(0, 8);
+}
+
+function mergeObjectEdits(remote = {}, local = {}, base = {}) {
+  const result = cloneState(remote || {});
+  const keys = new Set([...Object.keys(local || {}), ...Object.keys(base || {})]);
+  keys.forEach(key => {
+    const localValue = local?.[key];
+    const baseValue = base?.[key];
+    if (deepEqual(localValue, baseValue)) return;
+
+    if (localValue === undefined) {
+      delete result[key];
+      return;
+    }
+
+    if (isPlainObject(localValue) && isPlainObject(baseValue)) {
+      result[key] = mergeObjectEdits(result[key] || {}, localValue, baseValue);
+      return;
+    }
+
+    result[key] = cloneState(localValue);
+  });
+  return result;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function cloneState(value) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
+
+function deepEqual(left, right) {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
 }
 
 function normalizeDayPlan(plan) {
@@ -325,6 +449,17 @@ function bindEvents() {
   });
   window.addEventListener('hashchange', () => setActivePage(getPageFromHash(), true));
   window.addEventListener('popstate', () => setActivePage(getPageFromHash(), true));
+  window.addEventListener('focus', () => pullRemoteState(true));
+  window.addEventListener('pagehide', flushPendingSave);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) pullRemoteState(true);
+  });
+  document.addEventListener('focusout', () => {
+    if (remoteRenderPending && !hasPendingLocalChanges()) {
+      remoteRenderPending = false;
+      render();
+    }
+  });
   document.getElementById('saveNow').addEventListener('click', () => saveState(true));
   document.getElementById('refreshWeather').addEventListener('click', () => refreshWeather(true));
   document.getElementById('printPlanner').addEventListener('click', () => window.print());
@@ -352,22 +487,107 @@ function bindEvents() {
   document.getElementById('searchEverything').addEventListener('input', applySearch);
 }
 
+async function fetchRemoteState() {
+  const response = await fetch(`/api/state/${TRIP_ID}?ts=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not load shared planner state.');
+  return response.json();
+}
+
+function getRemoteUpdatedAt(remote) {
+  return remote?.updatedAt || remote?.data?.updatedAt || null;
+}
+
+function isRemoteNewer(remote) {
+  const next = Date.parse(getRemoteUpdatedAt(remote) || '');
+  const current = Date.parse(lastRemoteUpdatedAt || '');
+  return Number.isFinite(next) && (!Number.isFinite(current) || next > current + 250);
+}
+
+function setSyncStatus(label) {
+  syncMode = label;
+  const node = document.getElementById('syncMode');
+  if (node) node.textContent = label;
+}
+
+function startSharedSync() {
+  clearInterval(syncPollTimer);
+  if (!remoteSyncAvailable) return;
+  syncPollTimer = setInterval(() => pullRemoteState(false), SYNC_POLL_MS);
+}
+
+async function pullRemoteState(showToast = false) {
+  if (!remoteSyncAvailable || saveInFlight || hasPendingLocalChanges()) return;
+  try {
+    const remote = await fetchRemoteState();
+    if (!remote.data || !isRemoteNewer(remote)) {
+      setSyncStatus('Neon shared sync');
+      return;
+    }
+
+    state = mergeState(remote.data);
+    lastRemoteUpdatedAt = getRemoteUpdatedAt(remote);
+    lastSyncedState = cloneState(state);
+    savedVersion = localVersion;
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    setSyncStatus('Neon shared sync');
+    render();
+    if (showToast) toast('Updated with family edits.');
+  } catch {
+    setSyncStatus('Neon sync paused');
+  }
+}
+
 async function saveState(showToast = false) {
+  if (saveInFlight) {
+    pendingSaveAfterInFlight = true;
+    return;
+  }
+
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const versionToSave = localVersion;
+  saveInFlight = true;
   state.updatedAt = new Date().toISOString();
   localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
 
-  if (syncMode === 'Neon shared sync') {
+  if (remoteSyncAvailable) {
     try {
+      setSyncStatus('Autosaving...');
+      const remote = await fetchRemoteState();
+      if (remote.data && isRemoteNewer(remote)) {
+        state = mergeFamilyState(mergeState(remote.data), state, lastSyncedState || createDefaultState());
+        state.updatedAt = new Date().toISOString();
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+        if (canRefreshUiNow()) render();
+        else remoteRenderPending = true;
+      }
+
       const response = await fetch(`/api/state/${TRIP_ID}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: state })
       });
       if (!response.ok) throw new Error('Save failed');
+      const saved = await response.json();
+      lastRemoteUpdatedAt = saved.updatedAt || state.updatedAt;
+      lastSyncedState = cloneState(state);
+      if (localVersion === versionToSave) savedVersion = versionToSave;
+      setSyncStatus('Neon shared sync');
     } catch {
-      syncMode = 'This browser only';
+      remoteSyncAvailable = false;
+      clearInterval(syncPollTimer);
+      setSyncStatus('This browser only');
       toast('Neon save failed. Kept a local copy.');
+    } finally {
+      saveInFlight = false;
+      if (pendingSaveAfterInFlight || localVersion !== savedVersion) {
+        pendingSaveAfterInFlight = false;
+        setTimeout(() => saveState(false), 50);
+      }
     }
+  } else {
+    savedVersion = versionToSave;
+    saveInFlight = false;
   }
 
   document.getElementById('lastSaved').textContent = new Date(state.updatedAt).toLocaleString();
@@ -376,8 +596,33 @@ async function saveState(showToast = false) {
 }
 
 function scheduleSave() {
+  localVersion += 1;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => saveState(false), 350);
+  setSyncStatus(remoteSyncAvailable ? 'Autosaving...' : 'This browser only');
+  saveTimer = setTimeout(() => saveState(false), 500);
+}
+
+function hasPendingLocalChanges() {
+  return Boolean(saveTimer) || saveInFlight || localVersion !== savedVersion;
+}
+
+function flushPendingSave() {
+  if (!hasPendingLocalChanges()) return;
+  clearTimeout(saveTimer);
+  state.updatedAt = new Date().toISOString();
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+  if (!remoteSyncAvailable) return;
+
+  fetch(`/api/state/${TRIP_ID}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: state }),
+    keepalive: true
+  }).catch(() => {});
+}
+
+function canRefreshUiNow() {
+  return !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
 }
 
 function render() {
@@ -1210,6 +1455,7 @@ function importJson(event) {
   const reader = new FileReader();
   reader.onload = () => {
     state = mergeState(JSON.parse(reader.result));
+    localVersion += 1;
     saveState(true);
     render();
   };

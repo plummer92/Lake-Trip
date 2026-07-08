@@ -126,6 +126,7 @@ app.get('/api/weather', async (_req, res) => {
 
 app.get('/api/state/:tripId', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store');
     if (!(await ensureDb())) {
       return res.status(503).json({ error: 'DATABASE_URL is not configured.' });
     }
@@ -144,6 +145,7 @@ app.get('/api/state/:tripId', async (req, res) => {
 
 app.put('/api/state/:tripId', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store');
     if (!(await ensureDb())) {
       return res.status(503).json({ error: 'DATABASE_URL is not configured.' });
     }
